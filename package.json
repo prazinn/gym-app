@@ -10,7 +10,8 @@
     "db:generate": "npx prisma generate",
     "db:seed": "node seed.js",
     "db:studio": "npx prisma studio",
-    "setup": "npm install && npm run db:migrate && npm run db:seed"
+    "setup": "npm install && npm run db:migrate && npm run db:seed",
+    "postinstall": "prisma generate"
   },
   "dependencies": {
     "@prisma/client": "^5.22.0",

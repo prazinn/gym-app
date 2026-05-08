@@ -270,8 +270,6 @@ async function deleteMember(req, res) {
     const id = parseInt(req.params.id);
     await prisma.attendanceLog.deleteMany({ where: { memberId: id } });
     const member = await prisma.member.delete({ where: { id } });
-    const qrPath = path.join(__dirname, '../../public/qr_codes', `${member.memberCode}.png`);
-    if (fs.existsSync(qrPath)) fs.unlinkSync(qrPath);
     req.flash('success', 'Member deleted.');
     res.redirect('/members');
   } catch (err) {
@@ -285,10 +283,14 @@ async function deleteMember(req, res) {
 async function downloadQr(req, res) {
   try {
     const member = await prisma.member.findUnique({ where: { id: parseInt(req.params.id) } });
-    if (!member) return res.status(404).send('Member not found');
-    const filePath = qrService.getFilePath(member.memberCode);
-    if (!fs.existsSync(filePath)) return res.status(404).send('QR code not found');
-    res.download(filePath, `${member.memberCode}-qr.png`);
+    if (!member || !member.qrCodePath) return res.status(404).send('QR code not found');
+    
+    const base64Data = member.qrCodePath.split(',')[1];
+    const imgBuffer = Buffer.from(base64Data, 'base64');
+    
+    res.setHeader('Content-Type', 'image/png');
+    res.setHeader('Content-Disposition', `attachment; filename="${member.memberCode}-qr.png"`);
+    res.send(imgBuffer);
   } catch (err) {
     console.error(err);
     res.status(500).send('Error downloading QR');

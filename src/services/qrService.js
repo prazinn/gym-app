@@ -13,57 +13,46 @@ if (!fs.existsSync(QR_DIR)) {
 }
 
 /**
- * Generate a QR code PNG for a memberCode and save it to disk.
- * Updates the Member record with the relative path.
+ * Generate a QR code Data URL (Base64) for a memberCode.
+ * Updates the Member record with the Base64 string.
  * @param {string} memberCode
  * @param {number} memberId
- * @returns {string} relative path to QR image
+ * @returns {string} Data URL (Base64)
  */
 async function generate(memberCode, memberId) {
-  const filename = `${memberCode}.png`;
-  const filePath = path.join(QR_DIR, filename);
-  const relativePath = `/qr_codes/${filename}`;
-
-  await QRCode.toFile(filePath, memberCode, {
+  const dataUrl = await QRCode.toDataURL(memberCode, {
     errorCorrectionLevel: 'H',
-    type: 'png',
     width: 300,
     margin: 2,
-    color: { dark: '#1a1a2e', light: '#ffffff' },
+    color: { dark: '#1e293b', light: '#ffffff' },
   });
 
   // Update DB record if memberId provided
   if (memberId) {
     await prisma.member.update({
       where: { id: memberId },
-      data: { qrCodePath: relativePath },
+      data: { qrCodePath: dataUrl },
     });
   }
 
-  return relativePath;
+  return dataUrl;
 }
 
 /**
- * Delete old QR file and regenerate.
+ * Regenerate QR code Data URL.
  * @param {number} memberId
  * @param {string} memberCode
- * @returns {string} new relative path
+ * @returns {string} new Data URL
  */
 async function regenerate(memberId, memberCode) {
-  const oldFilePath = path.join(QR_DIR, `${memberCode}.png`);
-  if (fs.existsSync(oldFilePath)) {
-    fs.unlinkSync(oldFilePath);
-  }
   return generate(memberCode, memberId);
 }
 
 /**
- * Get absolute path to a QR code file.
- * @param {string} memberCode
- * @returns {string}
+ * Returns null as we no longer use physical files.
  */
 function getFilePath(memberCode) {
-  return path.join(QR_DIR, `${memberCode}.png`);
+  return null;
 }
 
 module.exports = { generate, regenerate, getFilePath };

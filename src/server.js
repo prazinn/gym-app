@@ -9,3 +9,5 @@ app.listen(PORT, () => {
   console.log(`   Environment : ${config.nodeEnv}`);
   console.log(`   Press Ctrl+C to stop\n`);
 });
+
+module.exports = app;
