@@ -5,7 +5,7 @@
 
   <div class="page-header mb-4">
     <div>
-      <h1 class="page-title">Members</h1>
+      <h1 class="page-title"><%= status === 'active' ? 'Active Members' : (status === 'inactive' ? 'Inactive Members' : 'All Members') %></h1>
       <p class="page-subtitle"><%= total %> member<%= total !== 1 ? 's' : '' %> found</p>
     </div>
     <a href="/members/add" class="btn btn-accent" id="btn-add-member">

@@ -19,44 +19,60 @@
   <!-- Stat Cards -->
   <div class="row g-4 mb-4">
     <div class="col-12 col-sm-6 col-xl-3">
-      <div class="stat-card stat-card--purple">
-        <div class="stat-card__icon"><i class="bi bi-activity"></i></div>
-        <div class="stat-card__body">
-          <div class="stat-card__value"><%= visitsToday %></div>
-          <div class="stat-card__label">Visits Today</div>
+      <% 
+        const today = new Date().toISOString().split('T')[0];
+      %>
+      <a href="/attendance/logs?from=<%= today %>&to=<%= today %>" class="stat-card-link">
+        <div class="stat-card stat-card--purple">
+          <div class="stat-card__icon"><i class="bi bi-activity"></i></div>
+          <div class="stat-card__body">
+            <div class="stat-card__value"><%= visitsToday %></div>
+            <div class="stat-card__label">Visits Today</div>
+          </div>
+          <div class="stat-card__trend"><i class="bi bi-arrow-up-right"></i></div>
         </div>
-        <div class="stat-card__trend"><i class="bi bi-arrow-up-right"></i></div>
-      </div>
+      </a>
     </div>
     <div class="col-12 col-sm-6 col-xl-3">
-      <div class="stat-card stat-card--cyan">
-        <div class="stat-card__icon"><i class="bi bi-people-fill"></i></div>
-        <div class="stat-card__body">
-          <div class="stat-card__value"><%= totalActive %></div>
-          <div class="stat-card__label">Active Members</div>
+      <a href="/members?status=active" class="stat-card-link">
+        <div class="stat-card stat-card--cyan">
+          <div class="stat-card__icon"><i class="bi bi-people-fill"></i></div>
+          <div class="stat-card__body">
+            <div class="stat-card__value"><%= totalActive %></div>
+            <div class="stat-card__label">Active Members</div>
+          </div>
+          <div class="stat-card__trend"><i class="bi bi-arrow-up-right"></i></div>
         </div>
-        <div class="stat-card__trend"><i class="bi bi-arrow-up-right"></i></div>
-      </div>
+      </a>
     </div>
     <div class="col-12 col-sm-6 col-xl-3">
-      <div class="stat-card stat-card--green">
-        <div class="stat-card__icon"><i class="bi bi-qr-code-scan"></i></div>
-        <div class="stat-card__body">
-          <div class="stat-card__value"><%= recentLogs.length %></div>
-          <div class="stat-card__label">Recent Check-ins</div>
+      <% 
+        const sevenDaysAgo = new Date();
+        sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+        const fromDate = sevenDaysAgo.toISOString().split('T')[0];
+      %>
+      <a href="/attendance/logs?from=<%= fromDate %>" class="stat-card-link">
+        <div class="stat-card stat-card--green">
+          <div class="stat-card__icon"><i class="bi bi-qr-code-scan"></i></div>
+          <div class="stat-card__body">
+            <div class="stat-card__value"><%= visitsLast7Days %></div>
+            <div class="stat-card__label">Check-ins in last 7 days</div>
+          </div>
+          <div class="stat-card__trend"><i class="bi bi-arrow-up-right"></i></div>
         </div>
-        <div class="stat-card__trend"><i class="bi bi-arrow-up-right"></i></div>
-      </div>
+      </a>
     </div>
     <div class="col-12 col-sm-6 col-xl-3">
-      <div class="stat-card stat-card--orange">
-        <div class="stat-card__icon"><i class="bi bi-card-checklist"></i></div>
-        <div class="stat-card__body">
-          <div class="stat-card__value"><%= JSON.parse(planLabels).length %></div>
-          <div class="stat-card__label">Plan Types</div>
+      <a href="/plans" class="stat-card-link">
+        <div class="stat-card stat-card--orange">
+          <div class="stat-card__icon"><i class="bi bi-card-checklist"></i></div>
+          <div class="stat-card__body">
+            <div class="stat-card__value"><%= JSON.parse(planLabels).length %></div>
+            <div class="stat-card__label">Plan Types</div>
+          </div>
+          <div class="stat-card__trend"><i class="bi bi-layers"></i></div>
         </div>
-        <div class="stat-card__trend"><i class="bi bi-layers"></i></div>
-      </div>
+      </a>
     </div>
   </div>
 

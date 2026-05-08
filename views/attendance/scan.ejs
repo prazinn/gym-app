@@ -64,11 +64,11 @@
     <div class="col-12 col-lg-6">
       <div class="card-glass h-100">
         <div class="card-glass__header">
-          <h2 class="card-glass__title"><i class="bi bi-activity me-2"></i>Scan Results</h2>
+          <h2 class="card-glass__title"><i class="bi bi-activity me-2"></i>Scan History</h2>
           <button class="btn btn-sm btn-ghost" id="clearResultsBtn">Clear</button>
         </div>
         <div class="card-glass__body p-0">
-          <div id="toastContainer" class="scan-results-list"></div>
+          <div id="historyContainer" class="scan-results-list"></div>
           <div class="empty-state py-5" id="noResultsMsg">
             <i class="bi bi-hourglass"></i>
             <p>Waiting for scans…</p>
@@ -79,6 +79,9 @@
 
   </div>
 </div>
+
+<!-- Toast Container for Notifications -->
+<div class="toast-container position-fixed bottom-0 end-0 p-3" id="mainToastContainer"></div>
 
 <!-- Manual Entry Modal -->
 <div class="modal fade" id="manualModal" tabindex="-1" aria-labelledby="manualModalLabel" aria-hidden="true">
@@ -111,124 +114,109 @@
   </div>
 </div>
 
-<% extraScripts = `
-<script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
-<script>
-const CSRF = '${csrfToken}';
-let stream = null;
-let scanning = false;
-let lastCode = '';
-let lastTime  = 0;
-const COOLDOWN = 3000; // ms between same-code scans
+<% 
+  // We use standard string concatenation for extraScripts to avoid nested backtick/template issues in EJS
+  let scripts = '<script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>';
+  scripts += '<script>';
+  scripts += 'const CSRF = "' + csrfToken + '";';
+  scripts += 'let stream = null; let scanning = false; let lastCode = ""; let lastTime = 0; const COOLDOWN = 3000;';
+  scripts += 'const video = document.getElementById("video"); const canvas = document.getElementById("canvas");';
+  scripts += 'const ctx = canvas.getContext("2d"); const overlay = document.getElementById("scannerOverlay");';
+  scripts += 'const idle = document.getElementById("scannerIdle"); const startBtn = document.getElementById("startBtn");';
+  scripts += 'const stopBtn = document.getElementById("stopBtn");';
+  
+  scripts += 'startBtn.addEventListener("click", startCamera);';
+  scripts += 'stopBtn.addEventListener("click", stopCamera);';
+  scripts += 'document.getElementById("clearResultsBtn").addEventListener("click", () => {';
+  scripts += '  document.getElementById("historyContainer").innerHTML = "";';
+  scripts += '  document.getElementById("noResultsMsg").style.display = "";';
+  scripts += '});';
 
-const video    = document.getElementById('video');
-const canvas   = document.getElementById('canvas');
-const ctx      = canvas.getContext('2d');
-const overlay  = document.getElementById('scannerOverlay');
-const idle     = document.getElementById('scannerIdle');
-const startBtn = document.getElementById('startBtn');
-const stopBtn  = document.getElementById('stopBtn');
+  scripts += 'async function startCamera() {';
+  scripts += '  try {';
+  scripts += '    stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });';
+  scripts += '    video.srcObject = stream; await video.play();';
+  scripts += '    idle.style.display = "none"; overlay.style.display = "";';
+  scripts += '    startBtn.disabled = true; stopBtn.disabled = false; scanning = true;';
+  scripts += '    requestAnimationFrame(scanLoop);';
+  scripts += '  } catch (e) { showResult(false, "Camera error: " + e.message, ""); }';
+  scripts += '}';
 
-startBtn.addEventListener('click', startCamera);
-stopBtn.addEventListener('click', stopCamera);
-document.getElementById('clearResultsBtn').addEventListener('click', () => {
-  document.getElementById('toastContainer').innerHTML = '';
-  document.getElementById('noResultsMsg').style.display = '';
-});
+  scripts += 'function stopCamera() {';
+  scripts += '  scanning = false; if (stream) stream.getTracks().forEach(t => t.stop());';
+  scripts += '  stream = null; video.srcObject = null;';
+  scripts += '  idle.style.display = ""; overlay.style.display = "none";';
+  scripts += '  startBtn.disabled = false; stopBtn.disabled = true;';
+  scripts += '}';
 
-async function startCamera() {
-  try {
-    stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
-    video.srcObject = stream;
-    await video.play();
-    idle.style.display    = 'none';
-    overlay.style.display = '';
-    startBtn.disabled = true;
-    stopBtn.disabled  = false;
-    scanning = true;
-    requestAnimationFrame(scanLoop);
-  } catch (e) {
-    showResult(false, 'Camera error: ' + e.message, '');
-  }
-}
+  scripts += 'function scanLoop() {';
+  scripts += '  if (!scanning) return;';
+  scripts += '  if (video.readyState === video.HAVE_ENOUGH_DATA) {';
+  scripts += '    canvas.width = video.videoWidth; canvas.height = video.videoHeight;';
+  scripts += '    ctx.drawImage(video, 0, 0);';
+  scripts += '    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);';
+  scripts += '    const code = jsQR(imageData.data, imageData.width, imageData.height, { inversionAttempts: "dontInvert" });';
+  scripts += '    if (code) {';
+  scripts += '      const now = Date.now();';
+  scripts += '      if (code.data !== lastCode || (now - lastTime) > COOLDOWN) {';
+  scripts += '        lastCode = code.data; lastTime = now; handleScan(code.data);';
+  scripts += '      }';
+  scripts += '    }';
+  scripts += '  }';
+  scripts += '  requestAnimationFrame(scanLoop);';
+  scripts += '}';
 
-function stopCamera() {
-  scanning = false;
-  if (stream) stream.getTracks().forEach(t => t.stop());
-  stream = null;
-  video.srcObject = null;
-  idle.style.display    = '';
-  overlay.style.display = 'none';
-  startBtn.disabled = false;
-  stopBtn.disabled  = true;
-}
+  scripts += 'function getMode() { return document.querySelector("input[name=\'mode\']:checked").value; }';
 
-function scanLoop() {
-  if (!scanning) return;
-  if (video.readyState === video.HAVE_ENOUGH_DATA) {
-    canvas.width  = video.videoWidth;
-    canvas.height = video.videoHeight;
-    ctx.drawImage(video, 0, 0);
-    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-    const code = jsQR(imageData.data, imageData.width, imageData.height, { inversionAttempts: 'dontInvert' });
-    if (code) {
-      const now = Date.now();
-      if (code.data !== lastCode || (now - lastTime) > COOLDOWN) {
-        lastCode = code.data;
-        lastTime = now;
-        handleScan(code.data);
-      }
-    }
-  }
-  requestAnimationFrame(scanLoop);
-}
+  scripts += 'async function handleScan(memberCode) {';
+  scripts += '  const mode = getMode(); await postAttendance(memberCode, mode, "qr_scan");';
+  scripts += '}';
 
-function getMode() {
-  return document.querySelector('input[name="mode"]:checked').value;
-}
+  scripts += 'async function submitManual() {';
+  scripts += '  const codeEl = document.getElementById("manualCode");';
+  scripts += '  const code = codeEl.value.trim().toUpperCase();';
+  scripts += '  if (!code) return;';
+  scripts += '  const mode = document.querySelector("input[name=\'manualMode\']:checked").value;';
+  scripts += '  const modalEl = document.getElementById("manualModal");';
+  scripts += '  const modal = bootstrap.Modal.getOrCreateInstance(modalEl);';
+  scripts += '  modal.hide();';
+  scripts += '  await postAttendance(code, mode, "manual");';
+  scripts += '  codeEl.value = "";';
+  scripts += '}';
 
-async function handleScan(memberCode) {
-  const mode = getMode();
-  await postAttendance(memberCode, mode);
-}
+  scripts += 'async function postAttendance(memberCode, mode, method = "qr_scan") {';
+  scripts += '  try {';
+  scripts += '    const res = await fetch("/attendance/" + (mode === "checkin" ? "checkin" : "checkout"), {';
+  scripts += '      method: "POST",';
+  scripts += '      headers: { "Content-Type": "application/json", "CSRF-Token": CSRF },';
+  scripts += '      body: JSON.stringify({ memberCode, method, _csrf: CSRF }),';
+  scripts += '    });';
+  scripts += '    const data = await res.json();';
+  scripts += '    showResult(res.ok, res.ok ? data.message : data.error, memberCode);';
+  scripts += '  } catch (e) { showResult(false, "Network error: " + e.message, memberCode); }';
+  scripts += '}';
 
-async function submitManual() {
-  const code = document.getElementById('manualCode').value.trim().toUpperCase();
-  if (!code) return;
-  const mode = document.querySelector('input[name="manualMode"]:checked').value;
-  bootstrap.Modal.getInstance(document.getElementById('manualModal')).hide();
-  await postAttendance(code, mode);
-}
+  scripts += 'function showToast(ok, msg) {';
+  scripts += '  const toastContainer = document.getElementById("mainToastContainer");';
+  scripts += '  const toastId = "toast-" + Date.now();';
+  scripts += '  const html = `<div id="${toastId}" class="toast align-items-center text-white ${ok ? "bg-success" : "bg-danger"} border-0" role="alert"><div class="d-flex"><div class="toast-body"><i class="bi bi-${ok ? "check-circle-fill" : "x-circle-fill"} me-2"></i>${msg}</div><button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button></div></div>`;';
+  scripts += '  toastContainer.insertAdjacentHTML("beforeend", html);';
+  scripts += '  const toastEl = document.getElementById(toastId);';
+  scripts += '  const toast = new bootstrap.Toast(toastEl, { delay: 3000 });';
+  scripts += '  toast.show();';
+  scripts += '  toastEl.addEventListener("hidden.bs.toast", () => toastEl.remove());';
+  scripts += '}';
 
-async function postAttendance(memberCode, mode) {
-  const endpoint = '/attendance/' + mode.replace('check', 'check');
-  try {
-    const res  = await fetch('/attendance/' + (mode === 'checkin' ? 'checkin' : 'checkout'), {
-      method:  'POST',
-      headers: { 'Content-Type': 'application/json', 'CSRF-Token': CSRF },
-      body:    JSON.stringify({ memberCode, _csrf: CSRF }),
-    });
-    const data = await res.json();
-    showResult(res.ok, res.ok ? data.message : data.error, memberCode);
-  } catch (e) {
-    showResult(false, 'Network error: ' + e.message, memberCode);
-  }
-}
-
-function showResult(ok, msg, code) {
-  const container = document.getElementById('toastContainer');
-  document.getElementById('noResultsMsg').style.display = 'none';
-
-  const el = document.createElement('div');
-  el.className = 'scan-result-item ' + (ok ? 'scan-result-item--success' : 'scan-result-item--error');
-  el.innerHTML = \`
-    <div class="scan-result-icon"><i class="bi bi-\${ok ? 'check-circle-fill' : 'x-circle-fill'}"></i></div>
-    <div class="scan-result-body">
-      <div class="scan-result-msg">\${msg}</div>
-      <div class="scan-result-meta">\${code || ''} · \${new Date().toLocaleTimeString()}</div>
-    </div>
-  \`;
-  container.prepend(el);
-}
-</script>
-` %>
+  scripts += 'function showResult(ok, msg, code) {';
+  scripts += '  showToast(ok, msg);';
+  scripts += '  const container = document.getElementById("historyContainer");';
+  scripts += '  document.getElementById("noResultsMsg").style.display = "none";';
+  scripts += '  const el = document.createElement("div");';
+  scripts += '  el.className = "scan-result-item " + (ok ? "scan-result-item--success" : "scan-result-item--error");';
+  scripts += '  el.innerHTML = `<div class="scan-result-icon"><i class="bi bi-${ok ? "check-circle-fill" : "x-circle-fill"}"></i></div><div class="scan-result-body"><div class="scan-result-msg">${msg}</div><div class="scan-result-meta">${code || ""} · ${new Date().toLocaleTimeString()}</div></div>`;';
+  scripts += '  container.prepend(el);';
+  scripts += '}';
+  scripts += '</script>';
+  
+  extraScripts = scripts;
+%>

@@ -7,7 +7,7 @@ const prisma = new PrismaClient();
 // GET /dashboard
 async function index(req, res) {
   try {
-    const [visitsToday, totalActive, membersByPlan, recentLogs] = await Promise.all([
+    const [visitsToday, totalActive, membersByPlan, recentLogs, visitsLast7Days] = await Promise.all([
       attendanceService.todayVisits(),
       prisma.member.count({ where: { isActive: true } }),
       prisma.member.groupBy({
@@ -20,6 +20,7 @@ async function index(req, res) {
         orderBy: { checkIn: 'desc' },
         include: { member: true },
       }),
+      attendanceService.lastSevenDaysVisits(),
     ]);
 
     const planLabels = membersByPlan.map((p) => p.planType);
@@ -36,6 +37,7 @@ async function index(req, res) {
       planLabels: JSON.stringify(planLabels),
       planCounts: JSON.stringify(planCounts),
       recentLogs,
+      visitsLast7Days,
     });
   } catch (err) {
     console.error('Dashboard error:', err);

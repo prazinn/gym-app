@@ -110,4 +110,17 @@ async function todayVisits() {
   });
 }
 
-module.exports = { checkIn, checkOut, getLogs, todayVisits };
+/**
+ * Get visit count for the last 7 days.
+ */
+async function lastSevenDaysVisits() {
+  const sevenDaysAgo = new Date();
+  sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+  sevenDaysAgo.setHours(0, 0, 0, 0);
+
+  return prisma.attendanceLog.count({
+    where: { checkIn: { gte: sevenDaysAgo } },
+  });
+}
+
+module.exports = { checkIn, checkOut, getLogs, todayVisits, lastSevenDaysVisits };

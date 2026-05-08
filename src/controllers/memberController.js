@@ -23,19 +23,28 @@ const memberValidators = [
 async function list(req, res) {
   try {
     const search = req.query.search || '';
+    const status = req.query.status;
     const page = parseInt(req.query.page) || 1;
     const limit = 15;
     const skip = (page - 1) * limit;
 
-    const where = search
-      ? {
-        OR: [
-          { fullName: { contains: search } },
-          { memberCode: { contains: search } },
-          { email: { contains: search } },
-        ],
-      }
-      : {};
+    const where = {};
+    
+    // Search filter
+    if (search) {
+      where.OR = [
+        { fullName: { contains: search } },
+        { memberCode: { contains: search } },
+        { email: { contains: search } },
+      ];
+    }
+
+    // Status filter
+    if (status === 'active') {
+      where.isActive = true;
+    } else if (status === 'inactive') {
+      where.isActive = false;
+    }
 
     const [members, total] = await Promise.all([
       prisma.member.findMany({ where, skip, take: limit, orderBy: { createdAt: 'desc' } }),
@@ -50,6 +59,7 @@ async function list(req, res) {
       success: req.flash('success'),
       members,
       search,
+      status,
       page,
       pages: Math.ceil(total / limit),
       total,

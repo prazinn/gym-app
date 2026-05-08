@@ -56,4 +56,45 @@ async function addPlan(req, res) {
   }
 }
 
-module.exports = { list, addPlan, planValidators };
+// POST /plans/:id/edit
+async function updatePlan(req, res) {
+  const id = parseInt(req.params.id);
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    req.flash('error', errors.array().map((e) => e.msg).join(' '));
+    return res.redirect('/plans');
+  }
+  try {
+    await prisma.plan.update({
+      where: { id },
+      data: {
+        planName: req.body.planName.trim(),
+        durationDays: parseInt(req.body.durationDays),
+        price: parseFloat(req.body.price),
+        features: req.body.features || null,
+      },
+    });
+    req.flash('success', 'Plan updated successfully.');
+    res.redirect('/plans');
+  } catch (err) {
+    console.error(err);
+    req.flash('error', 'Failed to update plan.');
+    res.redirect('/plans');
+  }
+}
+
+// POST /plans/:id/delete
+async function deletePlan(req, res) {
+  try {
+    const id = parseInt(req.params.id);
+    await prisma.plan.delete({ where: { id } });
+    req.flash('success', 'Plan deleted successfully.');
+    res.redirect('/plans');
+  } catch (err) {
+    console.error(err);
+    req.flash('error', 'Failed to delete plan.');
+    res.redirect('/plans');
+  }
+}
+
+module.exports = { list, addPlan, updatePlan, deletePlan, planValidators };

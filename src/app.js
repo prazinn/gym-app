@@ -50,6 +50,7 @@ app.use(
         imgSrc: ["'self'", 'data:', 'blob:'],
         connectSrc: ["'self'"],
         mediaSrc: ["'self'", 'blob:'],
+        scriptSrcAttr: ["'unsafe-inline'"],
       },
     },
   })

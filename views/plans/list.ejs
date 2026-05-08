@@ -35,7 +35,7 @@
             <div class="plan-card__header">
               <h2 class="plan-card__name"><%= plan.planName %></h2>
               <div class="plan-card__price">
-                $<%= plan.price.toFixed(2) %>
+                NRS <%= plan.price.toFixed(2) %>
                 <span>/ <%= plan.durationDays %> days</span>
               </div>
             </div>
@@ -50,6 +50,30 @@
                 <p class="text-muted small">No features listed.</p>
               <% } %>
             </div>
+            <% if (role === 'admin') { %>
+              <div class="plan-card__footer d-flex gap-2 pt-3 border-top border-subtle mt-3">
+                <button
+                  class="btn btn-sm btn-ghost flex-fill"
+                  id="btn-edit-plan-<%= plan.id %>"
+                  data-bs-toggle="modal"
+                  data-bs-target="#editPlanModal"
+                  data-id="<%= plan.id %>"
+                  data-name="<%= plan.planName %>"
+                  data-duration="<%= plan.durationDays %>"
+                  data-price="<%= plan.price %>"
+                  data-features="<%= plan.features || '' %>">
+                  <i class="bi bi-pencil me-1"></i>Edit
+                </button>
+                <form method="POST" action="/plans/<%= plan.id %>/delete" class="flex-fill"
+                  id="form-delete-plan-<%= plan.id %>"
+                  onsubmit="return confirm('Delete plan \"<%= plan.planName %>\"? This cannot be undone.')">
+                  <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+                  <button type="submit" class="btn btn-sm btn-danger-ghost w-100" id="btn-delete-plan-<%= plan.id %>">
+                    <i class="bi bi-trash me-1"></i>Delete
+                  </button>
+                </form>
+              </div>
+            <% } %>
           </div>
         </div>
       <% }); %>
@@ -58,8 +82,9 @@
 
 </div>
 
-<!-- Add Plan Modal (admin only) -->
 <% if (role === 'admin') { %>
+
+<!-- Add Plan Modal -->
 <div class="modal fade" id="addPlanModal" tabindex="-1" aria-labelledby="addPlanModalLabel" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content card-glass border-0">
@@ -82,8 +107,8 @@
               <input type="number" class="form-control" id="durationDays" name="durationDays" min="1" required placeholder="30" />
             </div>
             <div class="col-6">
-              <label for="price" class="form-label fw-semibold">Price ($) <span class="text-danger">*</span></label>
-              <input type="number" class="form-control" id="price" name="price" min="0" step="0.01" required placeholder="29.99" />
+              <label for="price" class="form-label fw-semibold">Price (NRS) <span class="text-danger">*</span></label>
+              <input type="number" class="form-control" id="price" name="price" min="0" step="0.01" required placeholder="2999" />
             </div>
           </div>
           <div class="mt-3">
@@ -102,4 +127,63 @@
     </div>
   </div>
 </div>
+
+<!-- Edit Plan Modal -->
+<div class="modal fade" id="editPlanModal" tabindex="-1" aria-labelledby="editPlanModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content card-glass border-0">
+      <form method="POST" id="editPlanForm" action="/plans/0/edit">
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+        <div class="modal-header border-0">
+          <h3 class="modal-title h6 fw-bold" id="editPlanModalLabel">
+            <i class="bi bi-pencil me-2"></i>Edit Plan
+          </h3>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <div class="mb-3">
+            <label for="editPlanName" class="form-label fw-semibold">Plan Name <span class="text-danger">*</span></label>
+            <input type="text" class="form-control" id="editPlanName" name="planName" required />
+          </div>
+          <div class="row g-3">
+            <div class="col-6">
+              <label for="editDurationDays" class="form-label fw-semibold">Duration (days) <span class="text-danger">*</span></label>
+              <input type="number" class="form-control" id="editDurationDays" name="durationDays" min="1" required />
+            </div>
+            <div class="col-6">
+              <label for="editPrice" class="form-label fw-semibold">Price (NRS) <span class="text-danger">*</span></label>
+              <input type="number" class="form-control" id="editPrice" name="price" min="0" step="0.01" required />
+            </div>
+          </div>
+          <div class="mt-3">
+            <label for="editFeatures" class="form-label fw-semibold">Features <span class="text-muted fw-normal">(comma-separated)</span></label>
+            <input type="text" class="form-control" id="editFeatures" name="features"
+              placeholder="Unlimited access, Locker, Personal trainer session" />
+          </div>
+        </div>
+        <div class="modal-footer border-0">
+          <button type="button" class="btn btn-ghost" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-accent" id="btn-update-plan">
+            <i class="bi bi-check-lg me-1"></i>Save Changes
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<% extraScripts = `
+<script>
+  // Populate edit modal with plan data when triggered
+  document.getElementById('editPlanModal').addEventListener('show.bs.modal', function (e) {
+    const btn = e.relatedTarget;
+    document.getElementById('editPlanName').value     = btn.dataset.name;
+    document.getElementById('editDurationDays').value = btn.dataset.duration;
+    document.getElementById('editPrice').value        = btn.dataset.price;
+    document.getElementById('editFeatures').value     = btn.dataset.features;
+    document.getElementById('editPlanForm').action    = '/plans/' + btn.dataset.id + '/edit';
+  });
+</script>
+` %>
+
 <% } %>

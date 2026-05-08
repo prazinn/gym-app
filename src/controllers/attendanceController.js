@@ -18,13 +18,13 @@ function scanPage(req, res) {
 
 // POST /attendance/checkin  (JSON)
 async function checkIn(req, res) {
-  const { memberCode } = req.body;
+  const { memberCode, method } = req.body;
   if (!memberCode) return res.status(400).json({ error: 'memberCode is required.' });
   try {
     const { log, member } = await attendanceService.checkIn(
       memberCode.trim(),
       req.session.username || 'staff',
-      'qr_scan'
+      method || 'qr_scan'
     );
     res.json({
       success: true,
