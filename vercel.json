@@ -9,11 +9,6 @@
       }
     }
   ],
-  "functions": {
-    "src/app.js": {
-      "runtime": "nodejs20.x"
-    }
-  },
   "routes": [
     {
       "src": "/(.*)",
