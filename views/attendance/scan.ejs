@@ -185,6 +185,8 @@
   scripts += '}';
 
   scripts += 'async function postAttendance(memberCode, mode, method = "qr_scan") {';
+  scripts += '  const globalLoader = document.getElementById("global-loader");';
+  scripts += '  if (globalLoader) globalLoader.classList.remove("d-none");';
   scripts += '  try {';
   scripts += '    const res = await fetch("/attendance/" + (mode === "checkin" ? "checkin" : "checkout"), {';
   scripts += '      method: "POST",';
@@ -194,6 +196,7 @@
   scripts += '    const data = await res.json();';
   scripts += '    showResult(res.ok, res.ok ? data.message : data.error, memberCode);';
   scripts += '  } catch (e) { showResult(false, "Network error: " + e.message, memberCode); }';
+  scripts += '  finally { if (globalLoader) globalLoader.classList.add("d-none"); }';
   scripts += '}';
 
   scripts += 'function showToast(ok, msg) {';
