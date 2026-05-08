@@ -72,6 +72,7 @@ async function updatePlan(req, res) {
         durationDays: parseInt(req.body.durationDays),
         price: parseFloat(req.body.price),
         features: req.body.features || null,
+        isActive: req.body.isActive === 'on',
       },
     });
     req.flash('success', 'Plan updated successfully.');

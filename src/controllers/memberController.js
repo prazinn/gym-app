@@ -74,7 +74,10 @@ async function list(req, res) {
 // GET /members/add
 async function getAdd(req, res) {
   try {
-    const plans = await prisma.plan.findMany({ orderBy: { planName: 'asc' } });
+    const plans = await prisma.plan.findMany({ 
+      where: { isActive: true },
+      orderBy: { planName: 'asc' } 
+    });
     res.render('members/form', {
       title: 'Add Member — GymTrack',
       user: req.session.username,
@@ -134,7 +137,10 @@ async function postAdd(req, res) {
     res.redirect(`/members/${member.id}`);
   } catch (err) {
     console.error(err);
-    const plans = await prisma.plan.findMany({ orderBy: { planName: 'asc' } });
+    const plans = await prisma.plan.findMany({ 
+      where: { isActive: true },
+      orderBy: { planName: 'asc' } 
+    });
     const msg = err.code === 'P2002' ? 'Email already exists.' : 'Failed to create member.';
     return res.status(422).render('members/form', {
       title: 'Add Member — GymTrack',
@@ -184,7 +190,10 @@ async function getEdit(req, res) {
   try {
     const [member, plans] = await Promise.all([
       prisma.member.findUnique({ where: { id: parseInt(req.params.id) } }),
-      prisma.plan.findMany({ orderBy: { planName: 'asc' } }),
+      prisma.plan.findMany({ 
+        where: { isActive: true }, 
+        orderBy: { planName: 'asc' } 
+      }),
     ]);
     if (!member) { req.flash('error', 'Member not found.'); return res.redirect('/members'); }
     res.render('members/form', {
@@ -213,7 +222,10 @@ async function postEdit(req, res) {
   if (!errors.isEmpty()) {
     const [member, plans] = await Promise.all([
       prisma.member.findUnique({ where: { id } }),
-      prisma.plan.findMany({ orderBy: { planName: 'asc' } }),
+      prisma.plan.findMany({ 
+        where: { isActive: true }, 
+        orderBy: { planName: 'asc' } 
+      }),
     ]);
     return res.status(422).render('members/form', {
       title: 'Edit Member — GymTrack',

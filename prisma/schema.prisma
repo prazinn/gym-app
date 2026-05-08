@@ -36,11 +36,12 @@ model AttendanceLog {
 }
 
 model Plan {
-  id          Int     @id @default(autoincrement())
-  planName    String  @unique
+  id           Int      @id @default(autoincrement())
+  planName     String   @unique
   durationDays Int
-  price       Float
-  features    String?
+  price        Float
+  features     String?
+  isActive     Boolean  @default(true)
 }
 
 model User {
