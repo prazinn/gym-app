@@ -53,3 +53,9 @@ model User {
   role         String  @default("staff")
   isActive     Boolean @default(true)
 }
+model Session {
+  id        String   @id
+  sid       String   @unique
+  data      String
+  expiresAt DateTime
+}

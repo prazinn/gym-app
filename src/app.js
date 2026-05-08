@@ -21,7 +21,13 @@ const plansRoutes = require('./routes/plans');
 
 const { isAuthenticated } = require('./middleware/auth');
 
+const { PrismaClient } = require('@prisma/client');
+const { PrismaSessionStore } = require('@quixo3/prisma-session-store');
+
 const app = express();
+
+// Trust proxy for Vercel
+app.set('trust proxy', 1);
 
 // ─── View Engine ─────────────────────────────────────────────────────────────
 app.engine('ejs', ejsMate);
@@ -75,6 +81,14 @@ app.use(
       secure: config.isProd,
       maxAge: 8 * 60 * 60 * 1000, // 8 hours
     },
+    store: new PrismaSessionStore(
+      new PrismaClient(),
+      {
+        checkPeriod: 2 * 60 * 1000,  // ms
+        dbRecordIdIsSessionId: true,
+        dbRecordIdFunction: undefined,
+      }
+    ),
   })
 );
 
