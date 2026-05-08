@@ -25,19 +25,37 @@ async function exportReport(req, res) {
     });
 
     if (fmt === 'csv') {
+      const formatDateNPT = (date) => {
+        if (!date) return '';
+        return new Date(date).toLocaleString('en-GB', {
+          timeZone: 'Asia/Kathmandu',
+          year: 'numeric',
+          month: '2-digit',
+          day: '2-digit',
+          hour: '2-digit',
+          minute: '2-digit',
+          second: '2-digit',
+          hour12: false
+        }).replace(',', '');
+      };
+
       const header = 'Log ID,Member Code,Full Name,Email,Plan,Check In,Check Out,Duration (min),Method,Logged By\n';
       const rows = logs.map((l) => {
         const duration = l.checkOut
           ? Math.round((new Date(l.checkOut) - new Date(l.checkIn)) / 60000)
           : '';
+        
+        const checkInNPT = formatDateNPT(l.checkIn);
+        const checkOutNPT = formatDateNPT(l.checkOut);
+
         return [
           l.id,
           l.member.memberCode,
           `"${l.member.fullName}"`,
           l.member.email,
           l.member.planType,
-          new Date(l.checkIn).toISOString(),
-          l.checkOut ? new Date(l.checkOut).toISOString() : '',
+          checkInNPT,
+          checkOutNPT,
           duration,
           l.method,
           l.loggedBy || '',

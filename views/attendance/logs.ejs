@@ -1,148 +1,170 @@
 <% layout('/layout/base') %>
-<% activePage = 'logs' %>
+  <% activePage='logs' %>
 
-<div class="container-fluid px-4 py-4">
+    <div class="container-fluid px-4 py-4">
 
-  <div class="page-header mb-4">
-    <div>
-      <h1 class="page-title">Attendance Logs</h1>
-      <p class="page-subtitle"><%= total %> record<%= total !== 1 ? 's' : '' %> found</p>
-    </div>
-    <a href="/reports/export?fmt=csv<%= filters.from ? '&from=' + filters.from : '' %><%= filters.to ? '&to=' + filters.to : '' %>"
-       class="btn btn-accent" id="btn-export-csv">
-      <i class="bi bi-download me-2"></i>Export CSV
-    </a>
-  </div>
+      <div class="page-header mb-4">
+        <div>
+          <h1 class="page-title">Attendance Logs</h1>
+          <p class="page-subtitle">
+            <%= total %> record<%= total !==1 ? 's' : '' %> found
+          </p>
+        </div>
+        <a href="/reports/export?fmt=csv<%= filters.from ? '&from=' + filters.from : '' %><%= filters.to ? '&to=' + filters.to : '' %>"
+          class="btn btn-accent" id="btn-export-csv">
+          <i class="bi bi-download me-2"></i>Export CSV
+        </a>
+      </div>
 
-  <!-- Filters -->
-  <div class="card-glass mb-4">
-    <div class="card-glass__body">
-      <form method="GET" action="/attendance/logs" class="row g-3 align-items-end" id="logs-filter-form">
-        <div class="col-12 col-md-4">
-          <label class="form-label fw-semibold" for="search">Search Member</label>
-          <div class="position-relative">
-            <i class="bi bi-search search-icon-inside"></i>
-            <input type="text" name="search" id="search" class="form-control search-input-padded"
-              value="<%= filters.search || '' %>" placeholder="Name or member code…" />
-          </div>
+      <!-- Filters -->
+      <div class="card-glass mb-4">
+        <div class="card-glass__body">
+          <form method="GET" action="/attendance/logs" class="row g-3 align-items-end" id="logs-filter-form">
+            <div class="col-12 col-md-4">
+              <label class="form-label fw-semibold" for="search">Search Member</label>
+              <div class="position-relative">
+                <i class="bi bi-search search-icon-inside"></i>
+                <input type="text" name="search" id="search" class="form-control search-input-padded"
+                  value="<%= filters.search || '' %>" placeholder="Name or member code…" />
+              </div>
+            </div>
+            <div class="col-6 col-md-3">
+              <label class="form-label fw-semibold" for="from">From Date</label>
+              <input type="date" name="from" id="from" class="form-control" value="<%= filters.from || '' %>" />
+            </div>
+            <div class="col-6 col-md-3">
+              <label class="form-label fw-semibold" for="to">To Date</label>
+              <input type="date" name="to" id="to" class="form-control" value="<%= filters.to || '' %>" />
+            </div>
+            <div class="col-12 col-md-2 d-flex gap-2">
+              <button type="submit" class="btn btn-accent flex-grow-1" id="btn-filter">Filter</button>
+              <a href="/attendance/logs" class="btn btn-ghost" id="btn-reset-filter">Reset</a>
+            </div>
+          </form>
         </div>
-        <div class="col-6 col-md-3">
-          <label class="form-label fw-semibold" for="from">From Date</label>
-          <input type="date" name="from" id="from" class="form-control"
-            value="<%= filters.from || '' %>" />
-        </div>
-        <div class="col-6 col-md-3">
-          <label class="form-label fw-semibold" for="to">To Date</label>
-          <input type="date" name="to" id="to" class="form-control"
-            value="<%= filters.to || '' %>" />
-        </div>
-        <div class="col-12 col-md-2 d-flex gap-2">
-          <button type="submit" class="btn btn-accent flex-grow-1" id="btn-filter">Filter</button>
-          <a href="/attendance/logs" class="btn btn-ghost" id="btn-reset-filter">Reset</a>
-        </div>
-      </form>
-    </div>
-  </div>
+      </div>
 
-  <!-- Table -->
-  <div class="card-glass">
-    <div class="card-glass__body p-0">
-      <% if (logs.length === 0) { %>
-        <div class="empty-state py-5">
-          <i class="bi bi-calendar-x"></i>
-          <p>No attendance logs found for the selected filters.</p>
-        </div>
-      <% } else { %>
-        <div class="table-responsive">
-          <table class="table table-hover align-middle mb-0" id="logs-table">
-            <thead>
-              <tr>
-                <th>#</th>
-                <th>Member</th>
-                <th>Check In</th>
-                <th>Check Out</th>
-                <th>Duration</th>
-                <th>Method</th>
-                <th>Logged By</th>
-              </tr>
-            </thead>
-            <tbody>
-              <% logs.forEach(function(log) {
-                const duration = log.checkOut
-                  ? Math.round((new Date(log.checkOut) - new Date(log.checkIn)) / 60000)
-                  : null;
-              %>
-                <tr>
-                  <td class="text-muted small">#<%= log.id %></td>
-                  <td>
-                    <a href="/members/<%= log.memberId %>" class="member-cell text-decoration-none">
-                      <div class="member-avatar-sm"><%= log.member.fullName.charAt(0) %></div>
-                      <div>
-                        <div class="fw-semibold text-white"><%= log.member.fullName %></div>
-                        <div class="text-muted small"><%= log.member.memberCode %></div>
-                      </div>
-                    </a>
-                  </td>
-                  <td class="small">
-                    <div class="fw-semibold"><%= new Date(log.checkIn).toLocaleDateString('en-US', {month:'short',day:'numeric'}) %></div>
-                    <div class="text-muted"><%= new Date(log.checkIn).toLocaleTimeString('en-US', {hour:'2-digit',minute:'2-digit'}) %></div>
-                  </td>
-                  <td class="small">
-                    <% if (log.checkOut) { %>
-                      <div class="fw-semibold"><%= new Date(log.checkOut).toLocaleDateString('en-US', {month:'short',day:'numeric'}) %></div>
-                      <div class="text-muted"><%= new Date(log.checkOut).toLocaleTimeString('en-US', {hour:'2-digit',minute:'2-digit'}) %></div>
-                    <% } else { %>
-                      <span class="badge-status badge-status--active">Still In</span>
-                    <% } %>
-                  </td>
-                  <td class="small">
-                    <% if (duration !== null) { %>
-                      <span class="fw-semibold"><%= duration %></span> <span class="text-muted">min</span>
-                    <% } else { %>
-                      <span class="text-muted">—</span>
-                    <% } %>
-                  </td>
-                  <td>
-                    <span class="badge-method"><%= log.method.replace('_', ' ') %></span>
-                  </td>
-                  <td class="text-muted small"><%= log.loggedBy || '—' %></td>
-                </tr>
-              <% }); %>
-            </tbody>
-          </table>
-        </div>
+      <!-- Table -->
+      <div class="card-glass">
+        <div class="card-glass__body p-0">
+          <% if (logs.length===0) { %>
+            <div class="empty-state py-5">
+              <i class="bi bi-calendar-x"></i>
+              <p>No attendance logs found for the selected filters.</p>
+            </div>
+            <% } else { %>
+              <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0" id="logs-table">
+                  <thead>
+                    <tr>
+                      <th>#</th>
+                      <th>Member</th>
+                      <th>Check In</th>
+                      <th>Check Out</th>
+                      <th>Duration</th>
+                      <th>Method</th>
+                      <th>Logged By</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <% logs.forEach(function(log) { const duration=log.checkOut ? Math.round((new Date(log.checkOut) -
+                      new Date(log.checkIn)) / 60000) : null; %>
+                      <tr>
+                        <td class="fw-semibold text-white">#<%= log.id %></td>
+                        <td>
+                          <a href="/members/<%= log.memberId %>" class="member-cell text-decoration-none">
+                            <div class="member-avatar-sm">
+                              <%= log.member.fullName.charAt(0) %>
+                            </div>
+                            <div>
+                              <div class="fw-semibold text-white">
+                                <%= log.member.fullName %>
+                              </div>
+                              <div class="fw-semibold text-accent small">
+                                <%= log.member.memberCode %>
+                              </div>
+                            </div>
+                          </a>
+                        </td>
+                        <td>
+                          <div class="fw-semibold text-white">
+                            <%= new Date(log.checkIn).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' }) %>
+                          </div>
+                          <div class="text-accent small fw-bold">
+                            <%= new Date(log.checkIn).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true }) %>
+                          </div>
+                        </td>
+                        <td>
+                          <% if (log.checkOut) { %>
+                            <div class="fw-semibold text-white">
+                              <%= new Date(log.checkOut).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' }) %>
+                            </div>
+                            <div class="text-accent small fw-bold">
+                              <%= new Date(log.checkOut).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true }) %>
+                            </div>
+                            <% } else { %>
+                              <span class="badge-status badge-status--active">Still In</span>
+                              <% } %>
+                        </td>
+                        <td>
+                          <% if (duration !==null) { %>
+                            <span class="fw-semibold text-white">
+                              <%= duration %> min
+                            </span>
+                            <% } else { %>
+                              <span class="text-white">—</span>
+                              <% } %>
+                        </td>
+                        <td>
+                          <span class="badge-method fw-semibold text-white">
+                            <%= log.method.replace('_', ' ' ) %>
+                          </span>
+                        </td>
+                        <td class="fw-semibold text-white">
+                          <%= log.loggedBy || '—' %>
+                        </td>
+                      </tr>
+                      <% }); %>
+                  </tbody>
+                </table>
+              </div>
 
-        <!-- Pagination -->
-        <% if (pages > 1) { %>
-          <div class="d-flex justify-content-between align-items-center px-4 py-3 border-top border-subtle">
-            <span class="text-muted small">Page <%= page %> of <%= pages %> (<%= total %> total)</span>
-            <nav>
-              <ul class="pagination pagination-sm mb-0">
-                <% if (page > 1) { %>
-                  <li class="page-item">
-                    <a class="page-link" href="?page=<%= page-1 %><%= filters.search ? '&search='+filters.search : '' %><%= filters.from ? '&from='+filters.from : '' %><%= filters.to ? '&to='+filters.to : '' %>">
-                      <i class="bi bi-chevron-left"></i>
-                    </a>
-                  </li>
+              <!-- Pagination -->
+              <% if (pages> 1) { %>
+                <div class="d-flex justify-content-between align-items-center px-4 py-3 border-top border-subtle">
+                  <span class="text-muted small">Page <%= page %> of <%= pages %> (<%= total %> total)</span>
+                  <nav>
+                    <ul class="pagination pagination-sm mb-0">
+                      <% if (page> 1) { %>
+                        <li class="page-item">
+                          <a class="page-link"
+                            href="?page=<%= page-1 %><%= filters.search ? '&search='+filters.search : '' %><%= filters.from ? '&from='+filters.from : '' %><%= filters.to ? '&to='+filters.to : '' %>">
+                            <i class="bi bi-chevron-left"></i>
+                          </a>
+                        </li>
+                        <% } %>
+                          <% for (let i=Math.max(1, page-2); i <=Math.min(pages, page+2); i++) { %>
+                            <li class="page-item <%= i === page ? 'active' : '' %>">
+                              <a class="page-link"
+                                href="?page=<%= i %><%= filters.search ? '&search='+filters.search : '' %><%= filters.from ? '&from='+filters.from : '' %><%= filters.to ? '&to='+filters.to : '' %>">
+                                <%= i %>
+                              </a>
+                            </li>
+                            <% } %>
+                              <% if (page < pages) { %>
+                                <li class="page-item">
+                                  <a class="page-link"
+                                    href="?page=<%= page+1 %><%= filters.search ? '&search='+filters.search : '' %><%= filters.from ? '&from='+filters.from : '' %><%= filters.to ? '&to='+filters.to : '' %>">
+                                    <i class="bi bi-chevron-right"></i>
+                                  </a>
+                                </li>
+                                <% } %>
+                    </ul>
+                  </nav>
+                </div>
                 <% } %>
-                <% for (let i = Math.max(1, page-2); i <= Math.min(pages, page+2); i++) { %>
-                  <li class="page-item <%= i === page ? 'active' : '' %>">
-                    <a class="page-link" href="?page=<%= i %><%= filters.search ? '&search='+filters.search : '' %><%= filters.from ? '&from='+filters.from : '' %><%= filters.to ? '&to='+filters.to : '' %>"><%= i %></a>
-                  </li>
-                <% } %>
-                <% if (page < pages) { %>
-                  <li class="page-item">
-                    <a class="page-link" href="?page=<%= page+1 %><%= filters.search ? '&search='+filters.search : '' %><%= filters.from ? '&from='+filters.from : '' %><%= filters.to ? '&to='+filters.to : '' %>">
-                      <i class="bi bi-chevron-right"></i>
-                    </a>
-                  </li>
-                <% } %>
-              </ul>
-            </nav>
-          </div>
-        <% } %>
-      <% } %>
-    </div>
-  </div>
+                  <% } %>
+        </div>
+      </div>
 
-</div>
+    </div>
