@@ -1,0 +1,180 @@
+<% layout('/layout/base') %>
+<% activePage = 'dashboard' %>
+
+<div class="container-fluid px-4 py-4">
+
+  <!-- Page Header -->
+  <div class="page-header mb-4">
+    <div>
+      <h1 class="page-title">Dashboard</h1>
+      <p class="page-subtitle">Welcome back, <strong><%= user %></strong> — here's what's happening today.</p>
+    </div>
+    <div class="page-header-actions">
+      <a href="/members/add" class="btn btn-accent" id="btn-add-member-dash">
+        <i class="bi bi-person-plus-fill me-2"></i>Add Member
+      </a>
+    </div>
+  </div>
+
+  <!-- Stat Cards -->
+  <div class="row g-4 mb-4">
+    <div class="col-12 col-sm-6 col-xl-3">
+      <div class="stat-card stat-card--purple">
+        <div class="stat-card__icon"><i class="bi bi-activity"></i></div>
+        <div class="stat-card__body">
+          <div class="stat-card__value"><%= visitsToday %></div>
+          <div class="stat-card__label">Visits Today</div>
+        </div>
+        <div class="stat-card__trend"><i class="bi bi-arrow-up-right"></i></div>
+      </div>
+    </div>
+    <div class="col-12 col-sm-6 col-xl-3">
+      <div class="stat-card stat-card--cyan">
+        <div class="stat-card__icon"><i class="bi bi-people-fill"></i></div>
+        <div class="stat-card__body">
+          <div class="stat-card__value"><%= totalActive %></div>
+          <div class="stat-card__label">Active Members</div>
+        </div>
+        <div class="stat-card__trend"><i class="bi bi-arrow-up-right"></i></div>
+      </div>
+    </div>
+    <div class="col-12 col-sm-6 col-xl-3">
+      <div class="stat-card stat-card--green">
+        <div class="stat-card__icon"><i class="bi bi-qr-code-scan"></i></div>
+        <div class="stat-card__body">
+          <div class="stat-card__value"><%= recentLogs.length %></div>
+          <div class="stat-card__label">Recent Check-ins</div>
+        </div>
+        <div class="stat-card__trend"><i class="bi bi-arrow-up-right"></i></div>
+      </div>
+    </div>
+    <div class="col-12 col-sm-6 col-xl-3">
+      <div class="stat-card stat-card--orange">
+        <div class="stat-card__icon"><i class="bi bi-card-checklist"></i></div>
+        <div class="stat-card__body">
+          <div class="stat-card__value"><%= JSON.parse(planLabels).length %></div>
+          <div class="stat-card__label">Plan Types</div>
+        </div>
+        <div class="stat-card__trend"><i class="bi bi-layers"></i></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Chart + Recent Logs -->
+  <div class="row g-4">
+    <!-- Plan Chart -->
+    <div class="col-12 col-lg-5">
+      <div class="card-glass h-100">
+        <div class="card-glass__header">
+          <h2 class="card-glass__title"><i class="bi bi-pie-chart-fill me-2"></i>Members by Plan</h2>
+        </div>
+        <div class="card-glass__body d-flex align-items-center justify-content-center" style="min-height:280px">
+          <% if (JSON.parse(planLabels).length === 0) { %>
+            <div class="empty-state">
+              <i class="bi bi-bar-chart-line"></i>
+              <p>No plan data yet.</p>
+            </div>
+          <% } else { %>
+            <canvas id="planChart" style="max-height:260px"></canvas>
+          <% } %>
+        </div>
+      </div>
+    </div>
+
+    <!-- Recent Check-ins -->
+    <div class="col-12 col-lg-7">
+      <div class="card-glass h-100">
+        <div class="card-glass__header">
+          <h2 class="card-glass__title"><i class="bi bi-clock-history me-2"></i>Recent Check-ins</h2>
+          <a href="/attendance/logs" class="btn btn-sm btn-ghost">View All</a>
+        </div>
+        <div class="card-glass__body p-0">
+          <% if (recentLogs.length === 0) { %>
+            <div class="empty-state py-5">
+              <i class="bi bi-calendar-x"></i>
+              <p>No check-ins recorded yet.</p>
+            </div>
+          <% } else { %>
+            <div class="table-responsive">
+              <table class="table table-hover mb-0" id="recent-logs-table">
+                <thead>
+                  <tr>
+                    <th>Member</th>
+                    <th>Check In</th>
+                    <th>Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <% recentLogs.forEach(function(log) { %>
+                    <tr>
+                      <td>
+                        <div class="member-cell">
+                          <div class="member-avatar-sm"><%= log.member.fullName.charAt(0) %></div>
+                          <div>
+                            <div class="fw-semibold"><%= log.member.fullName %></div>
+                            <div class="text-muted small"><%= log.member.memberCode %></div>
+                          </div>
+                        </div>
+                      </td>
+                      <td class="text-muted small"><%= new Date(log.checkIn).toLocaleTimeString('en-US', {hour:'2-digit',minute:'2-digit'}) %></td>
+                      <td>
+                        <% if (!log.checkOut) { %>
+                          <span class="badge-status badge-status--active">Active</span>
+                        <% } else { %>
+                          <span class="badge-status badge-status--out">Checked Out</span>
+                        <% } %>
+                      </td>
+                    </tr>
+                  <% }); %>
+                </tbody>
+              </table>
+            </div>
+          <% } %>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<% extraScripts = `
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+<script>
+  (function() {
+    const labels = ${planLabels};
+    const counts = ${planCounts};
+    if (!labels.length) return;
+    const palette = ['#6c63ff','#00d2ff','#11de7a','#ff6b6b','#ffa94d','#a9c0ff'];
+    const ctx = document.getElementById('planChart');
+    if (!ctx) return;
+    new Chart(ctx, {
+      type: 'doughnut',
+      data: {
+        labels,
+        datasets: [{
+          data: counts,
+          backgroundColor: palette.slice(0, labels.length),
+          borderColor: 'rgba(255,255,255,0.05)',
+          borderWidth: 3,
+          hoverOffset: 12,
+        }]
+      },
+      options: {
+        responsive: true,
+        plugins: {
+          legend: {
+            position: 'bottom',
+            labels: { color: '#c9d1e0', font: { family: 'Inter', size: 13 }, padding: 16 }
+          },
+          tooltip: {
+            callbacks: {
+              label: (ctx) => ' ' + ctx.label + ': ' + ctx.parsed + ' members'
+            }
+          }
+        },
+        cutout: '65%',
+      }
+    });
+  })();
+</script>
+` %>

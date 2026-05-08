@@ -1,0 +1,204 @@
+<% layout('/layout/base') %>
+<% activePage = 'members' %>
+
+<div class="container-fluid px-4 py-4">
+
+  <!-- Header -->
+  <div class="page-header mb-4">
+    <div class="d-flex align-items-center gap-3">
+      <a href="/members" class="btn btn-ghost btn-icon" id="btn-back-profile"><i class="bi bi-arrow-left"></i></a>
+      <div>
+        <h1 class="page-title mb-0"><%= member.fullName %></h1>
+        <code class="member-code mt-1 d-inline-block"><%= member.memberCode %></code>
+      </div>
+    </div>
+    <div class="d-flex gap-2">
+      <a href="/members/<%= member.id %>/edit" class="btn btn-ghost" id="btn-edit-profile">
+        <i class="bi bi-pencil me-1"></i>Edit
+      </a>
+      <% if (role === 'admin') { %>
+        <form method="POST" action="/members/<%= member.id %>/delete" id="form-delete-profile"
+              onsubmit="return confirm('Delete this member? This cannot be undone.')">
+          <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+          <button type="submit" class="btn btn-danger-ghost" id="btn-delete-profile">
+            <i class="bi bi-trash me-1"></i>Delete
+          </button>
+        </form>
+      <% } %>
+    </div>
+  </div>
+
+  <div class="row g-4">
+
+    <!-- Member Card -->
+    <div class="col-12 col-lg-4">
+      <div class="card-glass">
+        <div class="card-glass__body text-center pb-4">
+          <div class="member-avatar-lg mx-auto mb-3"><%= member.fullName.charAt(0).toUpperCase() %></div>
+          <h2 class="h5 fw-bold mb-1"><%= member.fullName %></h2>
+          <p class="text-muted mb-3"><%= member.email %></p>
+          <% if (member.isActive) { %>
+            <span class="badge-status badge-status--active mb-3">Active Member</span>
+          <% } else { %>
+            <span class="badge-status badge-status--inactive mb-3">Inactive</span>
+          <% } %>
+
+          <div class="member-stats-grid mt-3">
+            <div class="member-stat">
+              <div class="member-stat__val"><%= member.heightCm %><span>cm</span></div>
+              <div class="member-stat__label">Height</div>
+            </div>
+            <div class="member-stat">
+              <div class="member-stat__val"><%= member.weightKg %><span>kg</span></div>
+              <div class="member-stat__label">Weight</div>
+            </div>
+            <div class="member-stat">
+              <div class="member-stat__val" id="profileBmi">—</div>
+              <div class="member-stat__label">BMI</div>
+            </div>
+          </div>
+
+          <hr class="border-subtle my-4" />
+
+          <dl class="member-dl text-start">
+            <div class="member-dl__row">
+              <dt><i class="bi bi-phone me-2"></i>Phone</dt>
+              <dd><%= member.phone || '—' %></dd>
+            </div>
+            <div class="member-dl__row">
+              <dt><i class="bi bi-card-checklist me-2"></i>Plan</dt>
+              <dd><span class="badge-plan"><%= member.planType %></span></dd>
+            </div>
+            <div class="member-dl__row">
+              <dt><i class="bi bi-calendar-check me-2"></i>Started</dt>
+              <dd><%= new Date(member.planStart).toLocaleDateString('en-US', {year:'numeric',month:'short',day:'numeric'}) %></dd>
+            </div>
+            <div class="member-dl__row">
+              <dt><i class="bi bi-calendar-x me-2"></i>Expires</dt>
+              <dd><%= member.planEnd ? new Date(member.planEnd).toLocaleDateString('en-US', {year:'numeric',month:'short',day:'numeric'}) : 'No expiry' %></dd>
+            </div>
+            <div class="member-dl__row">
+              <dt><i class="bi bi-clock me-2"></i>Joined</dt>
+              <dd><%= new Date(member.createdAt).toLocaleDateString('en-US', {year:'numeric',month:'short',day:'numeric'}) %></dd>
+            </div>
+          </dl>
+        </div>
+      </div>
+    </div>
+
+    <!-- QR Code Card -->
+    <div class="col-12 col-sm-6 col-lg-4">
+      <div class="card-glass h-100">
+        <div class="card-glass__header">
+          <h2 class="card-glass__title"><i class="bi bi-qr-code me-2"></i>QR Code</h2>
+        </div>
+        <div class="card-glass__body text-center">
+          <% if (member.qrCodePath) { %>
+            <div class="qr-wrapper mx-auto mb-4">
+              <img src="<%= member.qrCodePath %>" alt="QR Code for <%= member.memberCode %>" class="qr-img" id="qrImg" />
+            </div>
+          <% } else { %>
+            <div class="empty-state py-3">
+              <i class="bi bi-qr-code"></i>
+              <p>QR not generated yet.</p>
+            </div>
+          <% } %>
+
+          <div class="d-grid gap-2">
+            <a href="/members/<%= member.id %>/qr" class="btn btn-accent" id="btn-download-qr">
+              <i class="bi bi-download me-2"></i>Download QR PNG
+            </a>
+            <button class="btn btn-ghost" id="btn-regen-qr" onclick="regenQR(<%= member.id %>)">
+              <i class="bi bi-arrow-clockwise me-2"></i>Regenerate QR
+            </button>
+          </div>
+          <p class="text-muted small mt-3 mb-0">
+            Scan this code at the gym entrance to check in/out.
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Attendance History -->
+    <div class="col-12 col-sm-6 col-lg-4">
+      <div class="card-glass h-100">
+        <div class="card-glass__header">
+          <h2 class="card-glass__title"><i class="bi bi-journal-text me-2"></i>Recent Visits</h2>
+          <span class="text-muted small"><%= member.attendanceLogs.length %> records</span>
+        </div>
+        <div class="card-glass__body p-0" style="max-height:420px; overflow-y:auto;">
+          <% if (member.attendanceLogs.length === 0) { %>
+            <div class="empty-state py-4">
+              <i class="bi bi-calendar-x"></i>
+              <p>No visits recorded yet.</p>
+            </div>
+          <% } else { %>
+            <ul class="visit-timeline">
+              <% member.attendanceLogs.forEach(function(log) { %>
+                <li class="visit-timeline__item">
+                  <div class="visit-timeline__dot <%= log.checkOut ? '' : 'visit-timeline__dot--active' %>"></div>
+                  <div class="visit-timeline__body">
+                    <div class="fw-semibold small">
+                      <%= new Date(log.checkIn).toLocaleDateString('en-US', {weekday:'short',month:'short',day:'numeric'}) %>
+                    </div>
+                    <div class="text-muted small">
+                      In: <%= new Date(log.checkIn).toLocaleTimeString('en-US', {hour:'2-digit',minute:'2-digit'}) %>
+                      <% if (log.checkOut) { %>
+                        · Out: <%= new Date(log.checkOut).toLocaleTimeString('en-US', {hour:'2-digit',minute:'2-digit'}) %>
+                        <span class="badge-status badge-status--out ms-1">
+                          <%= Math.round((new Date(log.checkOut) - new Date(log.checkIn)) / 60000) %> min
+                        </span>
+                      <% } else { %>
+                        <span class="badge-status badge-status--active ms-1">Active</span>
+                      <% } %>
+                    </div>
+                    <div class="text-muted small opacity-75"><%= log.method.replace('_', ' ') %></div>
+                  </div>
+                </li>
+              <% }); %>
+            </ul>
+          <% } %>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<% extraScripts = `
+<script>
+  // Inline BMI calculation from server-rendered values
+  (function() {
+    const h = ${member.heightCm} / 100;
+    const w = ${member.weightKg};
+    if (h && w) {
+      document.getElementById('profileBmi').textContent = (w / (h * h)).toFixed(1);
+    }
+  })();
+
+  function regenQR(memberId) {
+    const btn = document.getElementById('btn-regen-qr');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Regenerating…';
+    fetch('/members/' + memberId + '/regen-qr', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'CSRF-Token': '${csrfToken}' },
+      body: JSON.stringify({ _csrf: '${csrfToken}' })
+    })
+    .then(r => r.json())
+    .then(data => {
+      if (data.success) {
+        const img = document.getElementById('qrImg');
+        if (img) img.src = data.path + '?t=' + Date.now();
+        btn.innerHTML = '<i class="bi bi-check-lg me-2"></i>Done!';
+        setTimeout(() => { btn.innerHTML = '<i class="bi bi-arrow-clockwise me-2"></i>Regenerate QR'; btn.disabled = false; }, 2000);
+      } else {
+        alert('Failed: ' + data.error);
+        btn.innerHTML = '<i class="bi bi-arrow-clockwise me-2"></i>Regenerate QR';
+        btn.disabled = false;
+      }
+    })
+    .catch(() => { btn.innerHTML = 'Error'; btn.disabled = false; });
+  }
+</script>
+` %>

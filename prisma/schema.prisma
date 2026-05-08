@@ -1,0 +1,53 @@
+// prisma/schema.prisma
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Member {
+  id             Int              @id @default(autoincrement())
+  memberCode     String           @unique
+  fullName       String
+  email          String           @unique
+  phone          String?
+  heightCm       Float
+  weightKg       Float
+  planType       String
+  planStart      DateTime
+  planEnd        DateTime?
+  qrCodePath     String?
+  isActive       Boolean          @default(true)
+  createdAt      DateTime         @default(now())
+  attendanceLogs AttendanceLog[]
+}
+
+model AttendanceLog {
+  id       Int      @id @default(autoincrement())
+  memberId Int
+  member   Member   @relation(fields: [memberId], references: [id])
+  checkIn  DateTime @default(now())
+  checkOut DateTime?
+  loggedBy String?
+  method   String   @default("qr_scan")
+}
+
+model Plan {
+  id          Int     @id @default(autoincrement())
+  planName    String  @unique
+  durationDays Int
+  price       Float
+  features    String?
+}
+
+model User {
+  id           Int     @id @default(autoincrement())
+  username     String  @unique
+  email        String  @unique
+  passwordHash String
+  role         String  @default("staff")
+  isActive     Boolean @default(true)
+}

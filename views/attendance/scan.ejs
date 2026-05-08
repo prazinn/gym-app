@@ -1,0 +1,234 @@
+<% layout('/layout/base') %>
+<% activePage = 'scan' %>
+
+<div class="container-fluid px-4 py-4">
+
+  <div class="page-header mb-4">
+    <div>
+      <h1 class="page-title">QR Scanner</h1>
+      <p class="page-subtitle">Point the camera at a member's QR code to check in or out.</p>
+    </div>
+    <!-- Manual Check-in -->
+    <button class="btn btn-ghost" id="btn-manual-toggle" data-bs-toggle="modal" data-bs-target="#manualModal">
+      <i class="bi bi-keyboard me-1"></i>Manual Entry
+    </button>
+  </div>
+
+  <div class="row g-4 justify-content-center">
+
+    <!-- Scanner -->
+    <div class="col-12 col-lg-6">
+      <div class="card-glass">
+        <div class="card-glass__header">
+          <h2 class="card-glass__title"><i class="bi bi-camera-video me-2"></i>Camera</h2>
+          <div class="d-flex gap-2">
+            <button class="btn btn-sm btn-accent" id="startBtn">
+              <i class="bi bi-play-fill me-1"></i>Start
+            </button>
+            <button class="btn btn-sm btn-ghost" id="stopBtn" disabled>
+              <i class="bi bi-stop-fill me-1"></i>Stop
+            </button>
+          </div>
+        </div>
+        <div class="card-glass__body text-center p-3">
+          <div class="scanner-wrap" id="scannerWrap">
+            <video id="video" class="scanner-video" autoplay playsinline muted></video>
+            <canvas id="canvas" class="d-none"></canvas>
+            <div class="scanner-overlay" id="scannerOverlay">
+              <div class="scanner-frame">
+                <div class="scanner-line" id="scannerLine"></div>
+              </div>
+            </div>
+            <div class="scanner-idle" id="scannerIdle">
+              <i class="bi bi-qr-code-scan"></i>
+              <p>Press <strong>Start</strong> to activate camera</p>
+            </div>
+          </div>
+
+          <!-- Mode Toggle -->
+          <div class="btn-group mt-3" role="group" id="modeGroup">
+            <input type="radio" class="btn-check" name="mode" id="modeIn" value="checkin" checked />
+            <label class="btn btn-outline-accent" for="modeIn">
+              <i class="bi bi-box-arrow-in-right me-1"></i>Check In
+            </label>
+            <input type="radio" class="btn-check" name="mode" id="modeOut" value="checkout" />
+            <label class="btn btn-outline-accent" for="modeOut">
+              <i class="bi bi-box-arrow-right me-1"></i>Check Out
+            </label>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Result Panel -->
+    <div class="col-12 col-lg-6">
+      <div class="card-glass h-100">
+        <div class="card-glass__header">
+          <h2 class="card-glass__title"><i class="bi bi-activity me-2"></i>Scan Results</h2>
+          <button class="btn btn-sm btn-ghost" id="clearResultsBtn">Clear</button>
+        </div>
+        <div class="card-glass__body p-0">
+          <div id="toastContainer" class="scan-results-list"></div>
+          <div class="empty-state py-5" id="noResultsMsg">
+            <i class="bi bi-hourglass"></i>
+            <p>Waiting for scans…</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- Manual Entry Modal -->
+<div class="modal fade" id="manualModal" tabindex="-1" aria-labelledby="manualModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content card-glass border-0">
+      <div class="modal-header border-0">
+        <h3 class="modal-title h6 fw-bold" id="manualModalLabel">
+          <i class="bi bi-keyboard me-2"></i>Manual Check-in / Check-out
+        </h3>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <label for="manualCode" class="form-label fw-semibold">Member Code</label>
+        <input type="text" class="form-control form-control-lg text-uppercase" id="manualCode"
+          placeholder="GYM-XXXXXX" maxlength="10" autocomplete="off" />
+        <div class="btn-group mt-3 w-100">
+          <input type="radio" class="btn-check" name="manualMode" id="manualIn" value="checkin" checked />
+          <label class="btn btn-outline-accent" for="manualIn">Check In</label>
+          <input type="radio" class="btn-check" name="manualMode" id="manualOut" value="checkout" />
+          <label class="btn btn-outline-accent" for="manualOut">Check Out</label>
+        </div>
+      </div>
+      <div class="modal-footer border-0">
+        <button type="button" class="btn btn-ghost" data-bs-dismiss="modal">Cancel</button>
+        <button type="button" class="btn btn-accent" id="manualSubmitBtn" onclick="submitManual()">
+          <i class="bi bi-check-lg me-1"></i>Submit
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<% extraScripts = `
+<script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
+<script>
+const CSRF = '${csrfToken}';
+let stream = null;
+let scanning = false;
+let lastCode = '';
+let lastTime  = 0;
+const COOLDOWN = 3000; // ms between same-code scans
+
+const video    = document.getElementById('video');
+const canvas   = document.getElementById('canvas');
+const ctx      = canvas.getContext('2d');
+const overlay  = document.getElementById('scannerOverlay');
+const idle     = document.getElementById('scannerIdle');
+const startBtn = document.getElementById('startBtn');
+const stopBtn  = document.getElementById('stopBtn');
+
+startBtn.addEventListener('click', startCamera);
+stopBtn.addEventListener('click', stopCamera);
+document.getElementById('clearResultsBtn').addEventListener('click', () => {
+  document.getElementById('toastContainer').innerHTML = '';
+  document.getElementById('noResultsMsg').style.display = '';
+});
+
+async function startCamera() {
+  try {
+    stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+    video.srcObject = stream;
+    await video.play();
+    idle.style.display    = 'none';
+    overlay.style.display = '';
+    startBtn.disabled = true;
+    stopBtn.disabled  = false;
+    scanning = true;
+    requestAnimationFrame(scanLoop);
+  } catch (e) {
+    showResult(false, 'Camera error: ' + e.message, '');
+  }
+}
+
+function stopCamera() {
+  scanning = false;
+  if (stream) stream.getTracks().forEach(t => t.stop());
+  stream = null;
+  video.srcObject = null;
+  idle.style.display    = '';
+  overlay.style.display = 'none';
+  startBtn.disabled = false;
+  stopBtn.disabled  = true;
+}
+
+function scanLoop() {
+  if (!scanning) return;
+  if (video.readyState === video.HAVE_ENOUGH_DATA) {
+    canvas.width  = video.videoWidth;
+    canvas.height = video.videoHeight;
+    ctx.drawImage(video, 0, 0);
+    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    const code = jsQR(imageData.data, imageData.width, imageData.height, { inversionAttempts: 'dontInvert' });
+    if (code) {
+      const now = Date.now();
+      if (code.data !== lastCode || (now - lastTime) > COOLDOWN) {
+        lastCode = code.data;
+        lastTime = now;
+        handleScan(code.data);
+      }
+    }
+  }
+  requestAnimationFrame(scanLoop);
+}
+
+function getMode() {
+  return document.querySelector('input[name="mode"]:checked').value;
+}
+
+async function handleScan(memberCode) {
+  const mode = getMode();
+  await postAttendance(memberCode, mode);
+}
+
+async function submitManual() {
+  const code = document.getElementById('manualCode').value.trim().toUpperCase();
+  if (!code) return;
+  const mode = document.querySelector('input[name="manualMode"]:checked').value;
+  bootstrap.Modal.getInstance(document.getElementById('manualModal')).hide();
+  await postAttendance(code, mode);
+}
+
+async function postAttendance(memberCode, mode) {
+  const endpoint = '/attendance/' + mode.replace('check', 'check');
+  try {
+    const res  = await fetch('/attendance/' + (mode === 'checkin' ? 'checkin' : 'checkout'), {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json', 'CSRF-Token': CSRF },
+      body:    JSON.stringify({ memberCode, _csrf: CSRF }),
+    });
+    const data = await res.json();
+    showResult(res.ok, res.ok ? data.message : data.error, memberCode);
+  } catch (e) {
+    showResult(false, 'Network error: ' + e.message, memberCode);
+  }
+}
+
+function showResult(ok, msg, code) {
+  const container = document.getElementById('toastContainer');
+  document.getElementById('noResultsMsg').style.display = 'none';
+
+  const el = document.createElement('div');
+  el.className = 'scan-result-item ' + (ok ? 'scan-result-item--success' : 'scan-result-item--error');
+  el.innerHTML = \`
+    <div class="scan-result-icon"><i class="bi bi-\${ok ? 'check-circle-fill' : 'x-circle-fill'}"></i></div>
+    <div class="scan-result-body">
+      <div class="scan-result-msg">\${msg}</div>
+      <div class="scan-result-meta">\${code || ''} · \${new Date().toLocaleTimeString()}</div>
+    </div>
+  \`;
+  container.prepend(el);
+}
+</script>
+` %>

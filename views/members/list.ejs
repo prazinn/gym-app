@@ -1,0 +1,137 @@
+<% layout('/layout/base') %>
+<% activePage = 'members' %>
+
+<div class="container-fluid px-4 py-4">
+
+  <div class="page-header mb-4">
+    <div>
+      <h1 class="page-title">Members</h1>
+      <p class="page-subtitle"><%= total %> member<%= total !== 1 ? 's' : '' %> found</p>
+    </div>
+    <a href="/members/add" class="btn btn-accent" id="btn-add-member">
+      <i class="bi bi-person-plus-fill me-2"></i>Add Member
+    </a>
+  </div>
+
+  <!-- Search Bar -->
+  <div class="card-glass mb-4">
+    <div class="card-glass__body">
+      <form method="GET" action="/members" class="d-flex gap-3 align-items-center" id="member-search-form">
+        <div class="flex-grow-1 position-relative">
+          <i class="bi bi-search search-icon-inside"></i>
+          <input
+            type="text"
+            name="search"
+            id="searchInput"
+            class="form-control form-control-lg search-input-padded"
+            placeholder="Search by name, code or email…"
+            value="<%= search %>"
+            autocomplete="off"
+          />
+        </div>
+        <button type="submit" class="btn btn-accent px-4" id="btn-search">Search</button>
+        <% if (search) { %>
+          <a href="/members" class="btn btn-ghost px-3" id="btn-clear-search">Clear</a>
+        <% } %>
+      </form>
+    </div>
+  </div>
+
+  <!-- Table -->
+  <div class="card-glass">
+    <div class="card-glass__body p-0">
+      <% if (members.length === 0) { %>
+        <div class="empty-state py-5">
+          <i class="bi bi-people"></i>
+          <p>No members found<%= search ? ' for "' + search + '"' : '' %>.</p>
+          <a href="/members/add" class="btn btn-accent mt-2">Add First Member</a>
+        </div>
+      <% } else { %>
+        <div class="table-responsive">
+          <table class="table table-hover align-middle mb-0" id="members-table">
+            <thead>
+              <tr>
+                <th>Member</th>
+                <th>Code</th>
+                <th>Plan</th>
+                <th>Plan End</th>
+                <th>Status</th>
+                <th class="text-end">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              <% members.forEach(function(m) { %>
+                <tr id="member-row-<%= m.id %>">
+                  <td>
+                    <div class="member-cell">
+                      <div class="member-avatar-sm"><%= m.fullName.charAt(0).toUpperCase() %></div>
+                      <div>
+                        <div class="fw-semibold"><%= m.fullName %></div>
+                        <div class="text-muted small"><%= m.email %></div>
+                      </div>
+                    </div>
+                  </td>
+                  <td><code class="member-code"><%= m.memberCode %></code></td>
+                  <td><span class="badge-plan"><%= m.planType %></span></td>
+                  <td class="text-muted small">
+                    <% if (m.planEnd) { %>
+                      <%= new Date(m.planEnd).toLocaleDateString('en-US', {year:'numeric',month:'short',day:'numeric'}) %>
+                    <% } else { %>
+                      <span class="text-muted">—</span>
+                    <% } %>
+                  </td>
+                  <td>
+                    <% if (m.isActive) { %>
+                      <span class="badge-status badge-status--active">Active</span>
+                    <% } else { %>
+                      <span class="badge-status badge-status--inactive">Inactive</span>
+                    <% } %>
+                  </td>
+                  <td class="text-end">
+                    <div class="d-flex gap-2 justify-content-end">
+                      <a href="/members/<%= m.id %>" class="btn btn-sm btn-ghost" title="View Profile" id="btn-view-<%= m.id %>">
+                        <i class="bi bi-eye"></i>
+                      </a>
+                      <a href="/members/<%= m.id %>/edit" class="btn btn-sm btn-ghost" title="Edit" id="btn-edit-<%= m.id %>">
+                        <i class="bi bi-pencil"></i>
+                      </a>
+                      <a href="/members/<%= m.id %>/qr" class="btn btn-sm btn-ghost" title="Download QR" id="btn-qr-<%= m.id %>">
+                        <i class="bi bi-qr-code"></i>
+                      </a>
+                      <% if (role === 'admin') { %>
+                        <form method="POST" action="/members/<%= m.id %>/delete" class="d-inline" id="form-delete-<%= m.id %>"
+                              onsubmit="return confirm('Delete <%= m.fullName %>? This cannot be undone.')">
+                          <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+                          <button type="submit" class="btn btn-sm btn-danger-ghost" title="Delete" id="btn-delete-<%= m.id %>">
+                            <i class="bi bi-trash"></i>
+                          </button>
+                        </form>
+                      <% } %>
+                    </div>
+                  </td>
+                </tr>
+              <% }); %>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Pagination -->
+        <% if (pages > 1) { %>
+          <div class="d-flex justify-content-between align-items-center px-4 py-3 border-top border-subtle">
+            <span class="text-muted small">Page <%= page %> of <%= pages %></span>
+            <nav>
+              <ul class="pagination pagination-sm mb-0">
+                <% for (let i = 1; i <= pages; i++) { %>
+                  <li class="page-item <%= i === page ? 'active' : '' %>">
+                    <a class="page-link" href="/members?page=<%= i %><%= search ? '&search=' + search : '' %>"><%= i %></a>
+                  </li>
+                <% } %>
+              </ul>
+            </nav>
+          </div>
+        <% } %>
+      <% } %>
+    </div>
+  </div>
+
+</div>

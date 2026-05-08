@@ -1,0 +1,201 @@
+<% layout('/layout/base') %>
+  <% activePage='members' %>
+
+    <div class="container-fluid px-4 py-4">
+
+      <div class="page-header mb-4">
+        <div>
+          <h1 class="page-title">
+            <%= isEdit ? 'Edit Member' : 'Add New Member' %>
+          </h1>
+          <p class="page-subtitle">
+            <%= isEdit ? 'Update member information below.' : 'Fill in the details to register a new member.' %>
+          </p>
+        </div>
+        <a href="/members" class="btn btn-ghost" id="btn-back-members">
+          <i class="bi bi-arrow-left me-1"></i>Back to Members
+        </a>
+      </div>
+
+      <% if (typeof errors !=='undefined' && errors && errors.length) { %>
+        <div class="alert alert-danger mb-4">
+          <i class="bi bi-exclamation-triangle-fill me-2"></i>
+          <ul class="mb-0 ps-3">
+            <% errors.forEach(function(e) { %>
+              <li>
+                <%= e %>
+              </li>
+              <% }); %>
+          </ul>
+        </div>
+        <% } %>
+
+          <div class="row g-4">
+            <!-- Main Form -->
+            <div class="col-12 col-xl-8">
+              <div class="card-glass">
+                <div class="card-glass__header">
+                  <h2 class="card-glass__title"><i class="bi bi-person-vcard me-2"></i>Member Information</h2>
+                </div>
+                <div class="card-glass__body">
+                  <form method="POST" action="<%= isEdit ? '/members/' + member.id + '/edit' : '/members/add' %>"
+                    novalidate id="memberForm">
+                    <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+
+                    <div class="row g-3">
+                      <!-- Full Name -->
+                      <div class="col-12 col-md-6">
+                        <label for="fullName" class="form-label fw-semibold">Full Name <span
+                            class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="fullName" name="fullName"
+                          value="<%= data.fullName || '' %>" required placeholder="John Doe" />
+                      </div>
+
+                      <!-- Email -->
+                      <div class="col-12 col-md-6">
+                        <label for="email" class="form-label fw-semibold">Email <span
+                            class="text-danger">*</span></label>
+                        <input type="email" class="form-control" id="email" name="email" value="<%= data.email || '' %>"
+                          required placeholder="john@example.com" />
+                      </div>
+
+                      <!-- Phone -->
+                      <div class="col-12 col-md-6">
+                        <label for="phone" class="form-label fw-semibold">Phone <span
+                            class="text-muted fw-normal">(optional)</span></label>
+                        <input type="tel" class="form-control" id="phone" name="phone" value="<%= data.phone || '' %>"
+                          placeholder="+1 555 000 0000" />
+                      </div>
+
+                      <!-- Plan Type -->
+                      <div class="col-12 col-md-6">
+                        <label for="planType" class="form-label fw-semibold">Plan Type <span
+                            class="text-danger">*</span></label>
+                        <select class="form-select" id="planType" name="planType" required>
+                          <option value="">Select a plan…</option>
+                          <% if (typeof plans !== 'undefined' && plans && plans.length) { %>
+                            <% plans.forEach(function(p) { %>
+                              <option value="<%= p.planName %>" <%= (data.planType === p.planName) ? 'selected' : '' %>>
+                                <%= p.planName %>
+                              </option>
+                            <% }); %>
+                          <% } else { %>
+                            <option value="" disabled>No plans available</option>
+                          <% } %>
+                        </select>
+                      </div>
+
+                      <!-- Height & Weight for BMI -->
+                      <div class="col-6 col-md-3">
+                        <label for="heightCm" class="form-label fw-semibold">Height (cm) <span
+                            class="text-danger">*</span></label>
+                        <input type="number" class="form-control" id="heightCm" name="heightCm"
+                          value="<%= data.heightCm || '' %>" step="0.1" min="50" max="300" required placeholder="170"
+                          oninput="calcBMI()" />
+                      </div>
+
+                      <div class="col-6 col-md-3">
+                        <label for="weightKg" class="form-label fw-semibold">Weight (kg) <span
+                            class="text-danger">*</span></label>
+                        <input type="number" class="form-control" id="weightKg" name="weightKg"
+                          value="<%= data.weightKg || '' %>" step="0.1" min="10" max="500" required placeholder="70"
+                          oninput="calcBMI()" />
+                      </div>
+
+                      <!-- BMI Display -->
+                      <div class="col-12 col-md-6 d-flex align-items-end">
+                        <div class="bmi-card w-100" id="bmiCard">
+                          <div class="bmi-card__label">BMI</div>
+                          <div class="bmi-card__value" id="bmiValue">—</div>
+                          <div class="bmi-card__category" id="bmiCategory"></div>
+                        </div>
+                      </div>
+
+                      <!-- Plan Start -->
+                      <div class="col-12 col-md-6">
+                        <label for="planStart" class="form-label fw-semibold">Plan Start <span
+                            class="text-danger">*</span></label>
+                        <input type="date" class="form-control" id="planStart" name="planStart"
+                          value="<%= data.planStart ? new Date(data.planStart).toISOString().split('T')[0] : new Date().toISOString().split('T')[0] %>"
+                          required />
+                      </div>
+
+                      <!-- Plan End -->
+                      <div class="col-12 col-md-6">
+                        <label for="planEnd" class="form-label fw-semibold">Plan End <span
+                            class="text-muted fw-normal">(optional)</span></label>
+                        <input type="date" class="form-control" id="planEnd" name="planEnd"
+                          value="<%= data.planEnd ? new Date(data.planEnd).toISOString().split('T')[0] : '' %>" />
+                      </div>
+
+                      <!-- Active toggle (edit only) -->
+                      <% if (isEdit) { %>
+                        <div class="col-12">
+                          <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" role="switch" id="isActive" name="isActive"
+                              <%=(data.isActive || data.isActive===undefined) ? 'checked' : '' %> />
+                            <label class="form-check-label fw-semibold" for="isActive">Active Member</label>
+                          </div>
+                        </div>
+                        <% } %>
+
+                          <div class="col-12 d-flex gap-3 pt-2">
+                            <button type="submit" class="btn btn-accent px-5" id="btn-submit-member">
+                              <i class="bi bi-<%= isEdit ? 'check-lg' : 'person-plus-fill' %> me-2"></i>
+                              <%= isEdit ? 'Save Changes' : 'Register Member' %>
+                            </button>
+                            <a href="/members" class="btn btn-ghost px-4">Cancel</a>
+                          </div>
+                    </div>
+                  </form>
+                </div>
+              </div>
+            </div>
+
+            <!-- BMI Reference -->
+            <div class="col-12 col-xl-4">
+              <div class="card-glass">
+                <div class="card-glass__header">
+                  <h2 class="card-glass__title"><i class="bi bi-bar-chart-steps me-2"></i>BMI Reference</h2>
+                </div>
+                <div class="card-glass__body">
+                  <div class="bmi-scale">
+                    <div class="bmi-range bmi-range--underweight">
+                      <span class="bmi-range__label">Underweight</span><span class="bmi-range__val">&lt; 18.5</span>
+                    </div>
+                    <div class="bmi-range bmi-range--normal">
+                      <span class="bmi-range__label">Normal weight</span><span class="bmi-range__val">18.5 – 24.9</span>
+                    </div>
+                    <div class="bmi-range bmi-range--overweight">
+                      <span class="bmi-range__label">Overweight</span><span class="bmi-range__val">25 – 29.9</span>
+                    </div>
+                    <div class="bmi-range bmi-range--obese">
+                      <span class="bmi-range__label">Obese</span><span class="bmi-range__val">&ge; 30</span>
+                    </div>
+                  </div>
+                  <p class="text-muted small mt-3 mb-0">
+                    BMI is calculated as weight (kg) / height (m)².
+                    It is a screening tool, not a diagnostic measure.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+    </div>
+
+    <% extraScripts=` <script>
+      function calcBMI() {
+      const h = parseFloat(document.getElementById('heightCm').value) / 100;
+      const w = parseFloat(document.getElementById('weightKg').value);
+      const valEl = document.getElementById('bmiValue');
+      const catEl = document.getElementById('bmiCategory');
+      const card = document.getElementById('bmiCard');
+      if (!h || !w || h <= 0 || w <=0) { valEl.textContent='—' ; catEl.textContent='' ; return; } const bmi=(w / (h *
+        h)).toFixed(1); valEl.textContent=bmi; card.className='bmi-card w-100' ; if (bmi < 18.5) {
+        catEl.textContent='Underweight' ; card.classList.add('bmi-card--underweight'); } else if (bmi < 25) {
+        catEl.textContent='Normal weight' ; card.classList.add('bmi-card--normal'); } else if (bmi < 30) {
+        catEl.textContent='Overweight' ; card.classList.add('bmi-card--overweight'); } else { catEl.textContent='Obese'
+        ; card.classList.add('bmi-card--obese'); } } // Calc on page load if editing
+        window.addEventListener('DOMContentLoaded', calcBMI); </script>
+        ` %>
