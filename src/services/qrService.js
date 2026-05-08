@@ -7,10 +7,7 @@ const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 const QR_DIR = path.join(__dirname, '../../public/qr_codes');
 
-// Ensure the QR directory exists
-if (!fs.existsSync(QR_DIR)) {
-  fs.mkdirSync(QR_DIR, { recursive: true });
-}
+// We no longer need to check for QR_DIR because we are using Base64 Data URLs for QR codes.
 
 /**
  * Generate a QR code Data URL (Base64) for a memberCode.

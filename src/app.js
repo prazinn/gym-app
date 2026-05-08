@@ -1,23 +1,23 @@
 // src/app.js
 require('dotenv').config();
-const express     = require('express');
-const path        = require('path');
-const helmet      = require('helmet');
-const morgan      = require('morgan');
-const session     = require('express-session');
-const flash       = require('connect-flash');
+const express = require('express');
+const path = require('path');
+const helmet = require('helmet');
+const morgan = require('morgan');
+const session = require('express-session');
+const flash = require('connect-flash');
 const cookieParser = require('cookie-parser');
-const csurf       = require('csurf');
-const ejsMate     = require('ejs-mate');
-const config      = require('./config');
+const csurf = require('csurf');
+const ejsMate = require('ejs-mate');
+const config = require('./config');
 
 // Routes
-const authRoutes       = require('./routes/auth');
-const dashboardRoutes  = require('./routes/dashboard');
-const memberRoutes     = require('./routes/members');
+const authRoutes = require('./routes/auth');
+const dashboardRoutes = require('./routes/dashboard');
+const memberRoutes = require('./routes/members');
 const attendanceRoutes = require('./routes/attendance');
-const reportsRoutes    = require('./routes/reports');
-const plansRoutes      = require('./routes/plans');
+const reportsRoutes = require('./routes/reports');
+const plansRoutes = require('./routes/plans');
 
 const { isAuthenticated } = require('./middleware/auth');
 
@@ -88,10 +88,10 @@ app.use(csrfProtection);
 // Make csrfToken & session user available to all views automatically
 app.use((req, res, next) => {
   res.locals.csrfToken = req.csrfToken();
-  res.locals.user      = req.session.username || null;
-  res.locals.role      = req.session.role     || null;
-  res.locals.errors    = req.flash('error');
-  res.locals.success   = req.flash('success');
+  res.locals.user = req.session.username || null;
+  res.locals.role = req.session.role || null;
+  res.locals.errors = req.flash('error');
+  res.locals.success = req.flash('success');
   next();
 });
 
@@ -102,13 +102,14 @@ app.use('/qr_codes', isAuthenticated, express.static(path.join(__dirname, '../pu
 app.use(express.static(path.join(__dirname, '../public')));
 
 // ─── Routes ───────────────────────────────────────────────────────────────────
+app.get('/api/health', (req, res) => res.status(200).json({ status: 'ok', time: new Date().toISOString() }));
 app.get('/', (req, res) => res.redirect('/dashboard'));
-app.use('/auth',       authRoutes);
-app.use('/dashboard',  dashboardRoutes);
-app.use('/members',    memberRoutes);
+app.use('/auth', authRoutes);
+app.use('/dashboard', dashboardRoutes);
+app.use('/members', memberRoutes);
 app.use('/attendance', attendanceRoutes);
-app.use('/reports',    reportsRoutes);
-app.use('/plans',      plansRoutes);
+app.use('/reports', reportsRoutes);
+app.use('/plans', plansRoutes);
 
 // ─── 404 Handler ──────────────────────────────────────────────────────────────
 app.use((req, res) => {
