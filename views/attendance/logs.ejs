@@ -70,7 +70,8 @@
                     <% logs.forEach(function(log) { const duration=log.checkOut ? Math.round((new Date(log.checkOut) -
                       new Date(log.checkIn)) / 60000) : null; %>
                       <tr>
-                        <td class="fw-semibold text-white">#<%= log.id %></td>
+                        <td class="fw-bold">#<%= log.id %>
+                        </td>
                         <td>
                           <a href="/members/<%= log.memberId %>" class="member-cell text-decoration-none">
                             <div class="member-avatar-sm">
@@ -80,7 +81,7 @@
                               <div class="fw-semibold text-white">
                                 <%= log.member.fullName %>
                               </div>
-                              <div class="fw-semibold text-accent small">
+                              <div class="text-muted small">
                                 <%= log.member.memberCode %>
                               </div>
                             </div>
@@ -88,35 +89,39 @@
                         </td>
                         <td>
                           <div class="fw-semibold text-white">
-                            <%= new Date(log.checkIn).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' }) %>
+                            <%= new Date(log.checkIn).toLocaleDateString('en-US', { year: 'numeric' , month: 'short' ,
+                              day: 'numeric' }) %>
                           </div>
                           <div class="text-accent small fw-bold">
-                            <%= new Date(log.checkIn).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true }) %>
+                            <%= new Date(log.checkIn).toLocaleTimeString('en-US', { hour: '2-digit' , minute: '2-digit'
+                              , hour12: true }) %>
                           </div>
                         </td>
                         <td>
                           <% if (log.checkOut) { %>
                             <div class="fw-semibold text-white">
-                              <%= new Date(log.checkOut).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' }) %>
+                              <%= new Date(log.checkOut).toLocaleDateString('en-US', { year: 'numeric' , month: 'short'
+                                , day: 'numeric' }) %>
                             </div>
                             <div class="text-accent small fw-bold">
-                              <%= new Date(log.checkOut).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true }) %>
+                              <%= new Date(log.checkOut).toLocaleTimeString('en-US', { hour: '2-digit' ,
+                                minute: '2-digit' , hour12: true }) %>
                             </div>
                             <% } else { %>
                               <span class="badge-status badge-status--active">Still In</span>
                               <% } %>
                         </td>
-                        <td>
+                        <td class="small">
                           <% if (duration !==null) { %>
-                            <span class="fw-semibold text-white">
-                              <%= duration %> min
-                            </span>
+                            <span class="fw-semibold">
+                              <%= duration %>
+                            </span> <span class="text-muted">min</span>
                             <% } else { %>
-                              <span class="text-white">—</span>
+                              <span class="text-muted">—</span>
                               <% } %>
                         </td>
                         <td>
-                          <span class="badge-method fw-semibold text-white">
+                          <span class="badge-method">
                             <%= log.method.replace('_', ' ' ) %>
                           </span>
                         </td>
