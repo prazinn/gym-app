@@ -485,31 +485,6 @@ body {
   color: white;
 }
 
-.btn-danger {
-  background: var(--danger);
-  border: none;
-  color: white;
-}
-
-.btn-danger:hover {
-  background: #dc2626;
-  color: white;
-  box-shadow: 0 0 15px rgba(239, 68, 68, 0.4);
-}
-
-.btn-danger-ghost {
-  background: rgba(239, 68, 68, 0.1);
-  border: 1px solid rgba(239, 68, 68, 0.2);
-  color: #f87171;
-}
-
-.btn-danger-ghost:hover {
-  background: var(--danger);
-  border-color: var(--danger);
-  color: white;
-  box-shadow: 0 0 15px rgba(239, 68, 68, 0.4);
-}
-
 .btn-outline-accent {
   background: transparent;
   border: 1px solid var(--accent);
@@ -815,7 +790,7 @@ body {
 
 .plan-card--inactive {
   opacity: 0.6;
-  /* filter: grayscale(0.5); */
+  filter: grayscale(0.5);
   border-style: dashed;
   border-color: red;
 }
@@ -831,6 +806,18 @@ body {
   align-items: center;
   justify-content: center;
   transition: all 0.3s ease;
+}
+
+.progress-bar-top {
+  position: fixed;
+  top: 0;
+  left: 0;
+  height: 3px;
+  background: var(--accent);
+  z-index: 10000;
+  width: 0;
+  transition: width 0.4s ease;
+  box-shadow: 0 0 10px var(--accent);
 }
 
 .loader-content {
