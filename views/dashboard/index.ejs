@@ -128,7 +128,9 @@
                           <div class="member-avatar-sm"><%= log.member.fullName.charAt(0) %></div>
                           <div>
                             <div class="fw-semibold"><%= log.member.fullName %></div>
-                            <div class="text-muted small"><%= log.member.memberCode %></div>
+                            <div class="mt-1">
+                              <code class="member-code" style="font-size: 0.75rem;"><%= log.member.memberCode %></code>
+                            </div>
                           </div>
                         </div>
                       </td>

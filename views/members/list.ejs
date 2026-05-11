@@ -67,17 +67,17 @@
                       <div class="member-avatar-sm"><%= m.fullName.charAt(0).toUpperCase() %></div>
                       <div>
                         <div class="fw-semibold"><%= m.fullName %></div>
-                        <div class="text-muted small"><%= m.email %></div>
+                        <div class="member-email"><%= m.email %></div>
                       </div>
                     </div>
                   </td>
                   <td><code class="member-code"><%= m.memberCode %></code></td>
                   <td><span class="badge-plan"><%= m.planType %></span></td>
-                  <td class="text-muted small">
+                  <td class="plan-date">
                     <% if (m.planEnd) { %>
                       <%= new Date(m.planEnd).toLocaleDateString('en-US', {year:'numeric',month:'short',day:'numeric'}) %>
                     <% } else { %>
-                      <span class="text-muted">—</span>
+                      <span class="text-dim">—</span>
                     <% } %>
                   </td>
                   <td>

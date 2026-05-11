@@ -36,7 +36,7 @@
         <div class="card-glass__body text-center pb-4">
           <div class="member-avatar-lg mx-auto mb-3"><%= member.fullName.charAt(0).toUpperCase() %></div>
           <h2 class="h5 fw-bold mb-1"><%= member.fullName %></h2>
-          <p class="text-muted mb-3"><%= member.email %></p>
+          <p class="member-email mb-3"><%= member.email %></p>
           <% if (member.isActive) { %>
             <span class="badge-status badge-status--active mb-3">Active Member</span>
           <% } else { %>
@@ -75,7 +75,7 @@
             </div>
             <div class="member-dl__row">
               <dt><i class="bi bi-calendar-x me-2"></i>Expires</dt>
-              <dd><%= member.planEnd ? new Date(member.planEnd).toLocaleDateString('en-US', {year:'numeric',month:'short',day:'numeric'}) : 'No expiry' %></dd>
+              <dd class="plan-date"><%= member.planEnd ? new Date(member.planEnd).toLocaleDateString('en-US', {year:'numeric',month:'short',day:'numeric'}) : 'No expiry' %></dd>
             </div>
             <div class="member-dl__row">
               <dt><i class="bi bi-clock me-2"></i>Joined</dt>
