@@ -1,19 +1,23 @@
 // src/controllers/dashboardController.js
 const { PrismaClient } = require('@prisma/client');
 const attendanceService = require('../services/attendanceService');
+const memberService = require('../services/memberService');
 
 const prisma = new PrismaClient();
 
 // GET /dashboard
 async function index(req, res) {
   try {
-    const [visitsToday, totalActive, membersByPlan, recentLogs, visitsLast7Days] = await Promise.all([
+    // 1. Auto-update expired members on every dashboard load
+    await memberService.updateExpiredMembers();
+
+    const [visitsToday, totalActive, membersByPlan, recentLogs, visitsLast7Days, expiringSoon] = await Promise.all([
       attendanceService.todayVisits(),
-      prisma.member.count({ where: { isActive: true } }),
+      prisma.member.count({ where: { status: 'active' } }),
       prisma.member.groupBy({
         by: ['planType'],
         _count: { planType: true },
-        where: { isActive: true },
+        where: { status: 'active' },
       }),
       prisma.attendanceLog.findMany({
         take: 8,
@@ -21,6 +25,7 @@ async function index(req, res) {
         include: { member: true },
       }),
       attendanceService.lastSevenDaysVisits(),
+      memberService.getExpiringSoon(7), // Next 7 days
     ]);
 
     const planLabels = membersByPlan.map((p) => p.planType);
@@ -38,6 +43,7 @@ async function index(req, res) {
       planCounts: JSON.stringify(planCounts),
       recentLogs,
       visitsLast7Days,
+      expiringSoon,
     });
   } catch (err) {
     console.error('Dashboard error:', err);

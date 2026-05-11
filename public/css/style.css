@@ -582,13 +582,28 @@ body {
 }
 
 .badge-status--inactive {
+  background: rgba(148, 163, 184, 0.1);
+  color: #94a3b8;
+}
+
+.badge-status--expired {
   background: rgba(239, 68, 68, 0.1);
   color: #f87171;
 }
 
+.badge-status--orange {
+  background: rgba(249, 115, 22, 0.1);
+  color: #fb923c;
+}
+
+.badge-status--yellow {
+  background: rgba(234, 179, 8, 0.1);
+  color: #facc15;
+}
+
 .badge-status--out {
-  background: rgba(148, 163, 184, 0.1);
-  color: #94a3b8;
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text-muted);
 }
 
 .member-code {

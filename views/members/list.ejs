@@ -5,12 +5,39 @@
 
   <div class="page-header mb-4">
     <div>
-      <h1 class="page-title"><%= status === 'active' ? 'Active Members' : (status === 'inactive' ? 'Inactive Members' : 'All Members') %></h1>
+      <h1 class="page-title">
+        <% if (status === 'active') { %> Active Members
+        <% } else if (status === 'inactive') { %> Inactive Members
+        <% } else if (status === 'expired') { %> Expired Subscriptions
+        <% } else { %> All Members <% } %>
+      </h1>
       <p class="page-subtitle"><%= total %> member<%= total !== 1 ? 's' : '' %> found</p>
     </div>
     <a href="/members/add" class="btn btn-accent" id="btn-add-member">
       <i class="bi bi-person-plus-fill me-2"></i>Add Member
     </a>
+  </div>
+
+  <!-- Status Tabs -->
+  <div class="mb-4">
+    <div class="d-flex gap-2 flex-wrap">
+      <a href="/members?status=all<%= search ? '&search=' + search : '' %>" 
+         class="btn btn-sm <%= status === 'all' || !status ? 'btn-accent' : 'btn-ghost' %>">
+        All <span class="badge bg-white text-dark ms-1"><%= counts.all %></span>
+      </a>
+      <a href="/members?status=active<%= search ? '&search=' + search : '' %>" 
+         class="btn btn-sm <%= status === 'active' ? 'btn-accent' : 'btn-ghost' %>">
+        Active <span class="badge bg-white text-dark ms-1"><%= counts.active %></span>
+      </a>
+      <a href="/members?status=inactive<%= search ? '&search=' + search : '' %>" 
+         class="btn btn-sm <%= status === 'inactive' ? 'btn-accent' : 'btn-ghost' %>">
+        Inactive <span class="badge bg-white text-dark ms-1"><%= counts.inactive %></span>
+      </a>
+      <a href="/members?status=expired<%= search ? '&search=' + search : '' %>" 
+         class="btn btn-sm <%= status === 'expired' ? 'btn-accent' : 'btn-ghost' %>">
+        Expired <span class="badge bg-white text-dark ms-1"><%= counts.expired %></span>
+      </a>
+    </div>
   </div>
 
   <!-- Search Bar -->
@@ -81,11 +108,9 @@
                     <% } %>
                   </td>
                   <td>
-                    <% if (m.isActive) { %>
-                      <span class="badge-status badge-status--active">Active</span>
-                    <% } else { %>
-                      <span class="badge-status badge-status--inactive">Inactive</span>
-                    <% } %>
+                    <span class="badge-status badge-status--<%= m.status %>">
+                      <%= m.status.charAt(0).toUpperCase() + m.status.slice(1) %>
+                    </span>
                   </td>
                   <td class="text-end">
                     <div class="d-flex gap-2 justify-content-end">
