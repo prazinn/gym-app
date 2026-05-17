@@ -21,9 +21,22 @@ model Member {
   planStart      DateTime
   planEnd        DateTime?
   qrCodePath     String?
+  status         String           @default("active") // "active", "inactive", "expired"
   isActive       Boolean          @default(true)
   createdAt      DateTime         @default(now())
   attendanceLogs AttendanceLog[]
+  statusLogs     StatusLog[]
+}
+
+model StatusLog {
+  id         Int      @id @default(autoincrement())
+  memberId   Int
+  member     Member   @relation(fields: [memberId], references: [id])
+  prevStatus String
+  newStatus  String
+  remarks    String
+  changedBy  String
+  createdAt  DateTime @default(now())
 }
 
 model AttendanceLog {
@@ -53,6 +66,7 @@ model User {
   role         String  @default("staff")
   isActive     Boolean @default(true)
 }
+
 model Session {
   id        String   @id
   sid       String   @unique

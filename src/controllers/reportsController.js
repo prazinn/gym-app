@@ -75,4 +75,54 @@ async function exportReport(req, res) {
   }
 }
 
-module.exports = { exportReport };
+// GET /reports/subscriptions
+async function subscriptionReport(req, res) {
+  try {
+    const [statusCounts, planStats, members] = await Promise.all([
+      prisma.member.groupBy({
+        by: ['status'],
+        _count: { id: true }
+      }),
+      prisma.member.groupBy({
+        by: ['planType'],
+        _count: { id: true },
+        where: { status: 'active' }
+      }),
+      prisma.member.findMany({
+        where: { status: 'active', planEnd: { not: null } },
+        select: { planEnd: true }
+      })
+    ]);
+
+    // Format stats
+    const stats = { active: 0, inactive: 0, expired: 0, total: 0 };
+    statusCounts.forEach(c => {
+      stats[c.status] = c._count.id;
+      stats.total += c._count.id;
+    });
+
+    // Expiration trend (next 30 days)
+    const today = new Date();
+    const trend = Array(4).fill(0); // 4 weeks
+    members.forEach(m => {
+      const diff = new Date(m.planEnd) - today;
+      const weeks = Math.floor(diff / (1000 * 60 * 60 * 24 * 7));
+      if (weeks >= 0 && weeks < 4) trend[weeks]++;
+    });
+
+    res.render('reports/subscriptions', {
+      title: 'Subscription Report — GymTrack',
+      user: req.session.username,
+      role: req.session.role,
+      stats,
+      planStats,
+      trend: JSON.stringify(trend)
+    });
+  } catch (err) {
+    console.error(err);
+    req.flash('error', 'Failed to generate subscription report.');
+    res.redirect('/dashboard');
+  }
+}
+
+module.exports = { exportReport, subscriptionReport };

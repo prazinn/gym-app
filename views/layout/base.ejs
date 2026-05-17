@@ -46,8 +46,11 @@
     <a href="/plans" class="nav-link-item <%= typeof activePage !== 'undefined' && activePage === 'plans' ? 'active' : '' %>">
       <i class="bi bi-card-checklist"></i><span>Plans</span>
     </a>
+    <a href="/reports/subscriptions" class="nav-link-item <%= typeof activePage !== 'undefined' && activePage === 'reports' ? 'active' : '' %>">
+      <i class="bi bi-file-earmark-bar-graph"></i><span>Subscription Report</span>
+    </a>
     <a href="/reports/export?fmt=csv" class="nav-link-item" id="nav-export">
-      <i class="bi bi-download"></i><span>Export CSV</span>
+      <i class="bi bi-download"></i><span>Export Attendance</span>
     </a>
   </nav>
 
@@ -72,7 +75,13 @@
       <i class="bi bi-list"></i>
     </button>
     <div class="topbar-title"><%= typeof title !== 'undefined' ? title.split('—')[0].trim() : 'GymTrack' %></div>
-    <div class="topbar-actions">
+    <div class="topbar-actions d-flex align-items-center gap-3">
+      <div class="position-relative cursor-pointer" title="Notifications">
+        <i class="bi bi-bell fs-5 text-muted"></i>
+        <span class="position-absolute top-0 start-100 translate-middle p-1 bg-danger border border-light rounded-circle">
+          <span class="visually-hidden">New alerts</span>
+        </span>
+      </div>
       <a href="/attendance/scan" class="btn btn-sm btn-accent" id="topbar-scan-btn">
         <i class="bi bi-qr-code-scan me-1"></i>Scan
       </a>

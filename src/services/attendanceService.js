@@ -13,7 +13,19 @@ const prisma = new PrismaClient();
 async function checkIn(memberCode, loggedBy = 'system', method = 'qr_scan') {
   const member = await prisma.member.findUnique({ where: { memberCode } });
   if (!member) throw new Error(`Member not found: ${memberCode}`);
-  if (!member.isActive) throw new Error(`Member account is inactive.`);
+  
+  if (member.status === 'inactive') {
+    throw new Error(`Member account is inactive. Please contact the front desk.`);
+  }
+  
+  if (member.status === 'expired') {
+    throw new Error(`Subscription expired. Please contact the front desk to renew.`);
+  }
+
+  // Fallback for safety if someone hasn't migrated but somehow is inactive
+  if (!member.isActive && member.status === 'active') {
+    throw new Error(`Member account is inactive.`);
+  }
 
   // Check for an existing open session
   const open = await prisma.attendanceLog.findFirst({
